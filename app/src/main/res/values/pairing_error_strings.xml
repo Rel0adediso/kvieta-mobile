@@ -1,0 +1,6 @@
+<resources>
+    <string name="pair_network_error">QR scanned, but the computer could not be reached. Keep the My phone window open.\n\nWith Hyper-V, the phone may not reach a VM behind Default Switch/NAT. Try an External switch connected to your router network. Sharing the same router is not enough.\n\nCheck that Windows Firewall allows Kvieta on the private/local network only; do not disable the firewall.</string>
+    <string name="pair_certificate_error">QR scanned, but the computer identity could not be verified. Check both device clocks and create a fresh QR code. Security verification was not bypassed.</string>
+    <string name="pair_other_error">QR scanned, but pairing did not finish. Create a fresh QR code in My phone on your computer and try again.</string>
+    <string name="pair_address">Connection address: %1$s</string>
+</resources>

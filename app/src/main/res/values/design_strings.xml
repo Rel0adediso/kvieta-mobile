@@ -1,0 +1,12 @@
+<resources>
+    <string name="relay_connecting_title">Connecting to your computer</string>
+    <string name="connection_transport_hint">An internet QR can connect across networks. A local QR requires the same network.</string>
+    <string name="plan_title">Weekly plan</string><string name="plan_description">Send daily hours and limits to the computer.</string>
+    <string name="plan_edit">Edit</string><string name="plan_close">Close</string><string name="plan_from">Starts</string><string name="plan_until">Ends</string><string name="plan_limit">Daily limit (min)</string>
+    <string name="plan_save">Save plan</string><string name="plan_saving">Sending…</string><string name="plan_saved">Sent to computer</string>
+    <string name="plan_safety">Only weekly hours and minute limits change. App rules and security settings cannot be changed from the phone.</string>
+    <string name="day_monday">Monday</string><string name="day_tuesday">Tuesday</string><string name="day_wednesday">Wednesday</string><string name="day_thursday">Thursday</string><string name="day_friday">Friday</string><string name="day_saturday">Saturday</string><string name="day_sunday">Sunday</string>
+    <string name="remaining_ring_description">Remaining share of today’s session allowance</string>
+    <string name="qr_connection_hint">Scan the QR code in Kvieta → My phone on your computer.</string>
+    <string name="relay_waiting_summary">Waiting for the computer’s first encrypted summary. Keep Kvieta running and both devices connected to the internet.</string>
+</resources>

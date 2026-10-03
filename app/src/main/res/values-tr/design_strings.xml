@@ -1,0 +1,12 @@
+<resources>
+    <string name="relay_connecting_title">Bilgisayarına bağlanılıyor</string>
+    <string name="connection_transport_hint">İnternet QR’ı farklı ağlarda da bağlanır. Yerel bağlantı QR’ı aynı ağı gerektirir.</string>
+    <string name="plan_title">Haftalık plan</string><string name="plan_description">Günlük saatleri ve limitleri bilgisayara gönder.</string>
+    <string name="plan_edit">Düzenle</string><string name="plan_close">Kapat</string><string name="plan_from">Başlangıç</string><string name="plan_until">Bitiş</string><string name="plan_limit">Günlük limit (dk)</string>
+    <string name="plan_save">Planı kaydet</string><string name="plan_saving">Gönderiliyor…</string><string name="plan_saved">Bilgisayara gönderildi</string>
+    <string name="plan_safety">Yalnızca haftalık saat ve dakika limitleri değişir. Uygulama kuralları ve güvenlik ayarları telefondan değiştirilemez.</string>
+    <string name="day_monday">Pazartesi</string><string name="day_tuesday">Salı</string><string name="day_wednesday">Çarşamba</string><string name="day_thursday">Perşembe</string><string name="day_friday">Cuma</string><string name="day_saturday">Cumartesi</string><string name="day_sunday">Pazar</string>
+    <string name="remaining_ring_description">Bugünkü oturum hakkının kalan oranı</string>
+    <string name="qr_connection_hint">Bilgisayarında Kvieta → Telefonum bölümündeki QR’ı okut.</string>
+    <string name="relay_waiting_summary">Bilgisayarın ilk şifreli özeti bekleniyor. Kvieta açık, iki cihaz da internete bağlı olsun.</string>
+</resources>

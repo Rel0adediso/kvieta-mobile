@@ -1,0 +1,14 @@
+<resources>
+    <string name="scan_title">Bilgisayarını bağla</string>
+    <string name="scan_hint">Bilgisayardaki Kvieta’da Telefonum bölümünü aç. Android QR kodunu çerçevenin içine getir.</string>
+    <string name="scan_permission">Bilgisayarındaki QR kodunu okutmak için kameraya izin ver.</string>
+    <string name="scan_allow">Kameraya izin ver</string>
+    <string name="scan_permission_settings">Kamera erişimini aç</string>
+    <string name="scan_camera_error">Kamera açılamadı. Kamerayı kullanan diğer uygulamaları kapatıp tekrar dene.</string>
+    <string name="scan_retry">Kamerayı tekrar aç</string>
+    <string name="scan_invalid">Bu QR geçerli bir Android daveti değil. Bilgisayarda Telefonum bölümünden yeni bir QR oluştur.</string>
+    <string name="scan_flash_on">Feneri aç</string>
+    <string name="scan_flash_off">Feneri kapat</string>
+    <string name="scan_approval">Okutunca iki cihazdaki kodu karşılaştır ve bilgisayarından onayla.</string>
+    <string name="scan_manual">Geri dön ve daveti elle gir</string>
+</resources>

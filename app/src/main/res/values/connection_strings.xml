@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="link_back">Back</string>
+    <string name="link_computer">Your computer</string>
+    <string name="link_title">Connect computer</string>
+    <string name="link_instructions">On your computer, open Settings → Privacy → My phone. Scan the Android companion QR shown there.</string>
+    <string name="link_manual">Cannot scan? Enter invitation manually</string>
+    <string name="link_scan_qr">Scan computer QR</string>
+    <string name="link_scan_prompt">Point the camera at the QR shown by Kvieta</string>
+    <string name="link_input">Computer invitation</string>
+    <string name="link_consent">Continue only with the invitation displayed on your own computer. The connection will share its usage summary after approval there.</string>
+    <string name="link_connect">Connect</string>
+    <string name="link_idle">Waiting for an invitation.</string>
+    <string name="link_loading">Connecting…</string>
+    <string name="link_waiting">Approve on your computer</string>
+    <string name="link_connected">Usage summary received</string>
+    <string name="link_offline">Could not get an updated summary. Check your internet connection and that Kvieta is running on the computer. Local pairing still requires the same Wi-Fi.</string>
+    <string name="link_rejected">Access was denied or the invitation expired. Check the device clocks and create a new invitation.</string>
+    <string name="link_invalid">This invitation is invalid or expired. Use a new invitation from the computer.</string>
+    <string name="link_compare">Compare this code with the computer. Approve there only if both match.</string>
+    <string name="link_old_data">Last known data · not live</string>
+    <string name="link_observed">Computer record: %1$s</string>
+    <string name="link_empty">No application usage recorded.</string>
+    <string name="link_refresh">Refresh summary</string>
+    <string name="link_sharing_hint">The dashboard refreshes automatically. Remote summaries and time decisions work on mobile data or another Wi-Fi while Kvieta is running on the computer.</string>
+    <string name="link_remote">Encrypted internet connection</string>
+    <string name="link_forget">Forget connection</string>
+    <string name="link_forget_hint">This deletes the phone’s connection and device key. Remove the phone from the computer’s sharing window too before pairing again.</string>
+    <string name="link_cancel">Cancel</string>
+    <string name="link_state_active">Last recorded state: active</string>
+    <string name="link_state_paused">Last recorded state: on a break</string>
+    <string name="link_state_ready">Last recorded state: ready</string>
+    <string name="link_state_expired">Last recorded state: time used up</string>
+    <string name="link_state_outside">Last recorded state: outside allowed hours</string>
+    <string name="link_state_unknown">Session state unavailable</string>
+</resources>

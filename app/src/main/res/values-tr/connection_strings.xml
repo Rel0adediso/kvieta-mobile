@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="link_back">Geri</string>
+    <string name="link_computer">Bilgisayarın</string>
+    <string name="link_title">Bilgisayar bağla</string>
+    <string name="link_instructions">Bilgisayarda Ayarlar → Gizlilik → Telefonum bölümünü aç ve Android eşlikçi QR kodunu okut.</string>
+    <string name="link_manual">QR okutamıyorum · Daveti elle gir</string>
+    <string name="link_scan_qr">Bilgisayar QR kodunu okut</string>
+    <string name="link_scan_prompt">Kamerayı Kvieta\'nın gösterdiği QR koda doğrult</string>
+    <string name="link_input">Bilgisayar daveti</string>
+    <string name="link_consent">Yalnızca kendi bilgisayarında gördüğün davetle devam et. Bağlantı, bilgisayardaki onaydan sonra kullanım özetini paylaşır.</string>
+    <string name="link_connect">Bağlan</string>
+    <string name="link_idle">Bilgisayar daveti bekleniyor.</string>
+    <string name="link_loading">Bağlanıyor…</string>
+    <string name="link_waiting">Bilgisayarında onayla</string>
+    <string name="link_connected">Kullanım özeti alındı</string>
+    <string name="link_offline">Güncel özet alınamadı. İnternet bağlantını ve bilgisayarda Kvieta’nın çalıştığını kontrol et. İlk eşleştirme için aynı Wi-Fi gerekir.</string>
+    <string name="link_rejected">Erişim reddedildi veya davetin süresi doldu. Cihaz saatlerini kontrol et ve yeni davet oluştur.</string>
+    <string name="link_invalid">Bu davet geçersiz veya süresi dolmuş. Bilgisayardan yeni davet al.</string>
+    <string name="link_compare">Bu kodu bilgisayardaki kodla karşılaştır. İkisi aynıysa bilgisayarda onayla.</string>
+    <string name="link_old_data">Son bilinen veri · canlı değil</string>
+    <string name="link_observed">Bilgisayar kaydı: %1$s</string>
+    <string name="link_empty">Uygulama kullanımı henüz kaydedilmemiş.</string>
+    <string name="link_refresh">Özeti yenile</string>
+    <string name="link_sharing_hint">Dashboard otomatik yenilenir. Bilgisayarda Kvieta çalışırken uzaktan özetler ve süre kararları mobil veride veya farklı Wi-Fi’da da çalışır.</string>
+    <string name="link_remote">İnternet üzerinden şifreli bağlantı</string>
+    <string name="link_forget">Bağlantıyı unut</string>
+    <string name="link_forget_hint">Bu işlem telefondaki bağlantıyı ve cihaz anahtarını siler. Yeniden eşleştirmeden önce bilgisayarın paylaşım penceresinden de telefon erişimini kaldır.</string>
+    <string name="link_cancel">Vazgeç</string>
+    <string name="link_state_active">Son kayıtta oturum etkin</string>
+    <string name="link_state_paused">Son kayıtta mola veriliyor</string>
+    <string name="link_state_ready">Son kayıtta oturum başlamaya hazır</string>
+    <string name="link_state_expired">Son kayıtta süre dolmuş</string>
+    <string name="link_state_outside">Son kayıtta izin verilen saatler dışında</string>
+    <string name="link_state_unknown">Oturum durumu bilinmiyor</string>
+</resources>

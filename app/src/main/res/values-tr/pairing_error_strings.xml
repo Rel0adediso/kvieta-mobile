@@ -1,0 +1,6 @@
+<resources>
+    <string name="pair_network_error">QR okundu, ancak bilgisayara ulaşılamadı. Telefonum penceresini açık tut.\n\nHyper-V kullanıyorsan Default Switch/NAT ağına telefon doğrudan erişemeyebilir. Sanal makineyi modem ağına bağlı Harici (External) switch ile dene. Aynı modeme bağlı olmak tek başına yeterli değildir.\n\nAyrıca Windows güvenlik duvarında Kvieta için yalnız özel/yerel ağ erişimini kontrol et; güvenlik duvarını tamamen kapatma.</string>
+    <string name="pair_certificate_error">QR okundu, ancak bilgisayarın güvenli kimliği doğrulanamadı. Cihaz saatlerini kontrol et ve bilgisayardan yeni QR oluştur. Güvenlik kontrolü atlanmadı.</string>
+    <string name="pair_other_error">QR okundu, ancak eşleştirme tamamlanamadı. Bilgisayardaki Telefonum penceresinden yeni QR oluşturup tekrar dene.</string>
+    <string name="pair_address">Bağlanılmaya çalışılan adres: %1$s</string>
+</resources>

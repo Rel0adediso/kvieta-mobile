@@ -1,0 +1,37 @@
+<resources>
+    <string name="pair_step_scan">1 · Bilgisayarındaki QR kodu okut</string>
+    <string name="pair_step_approve">2 · Kodları karşılaştır ve bilgisayarından onayla.</string>
+    <string name="connection_settings">Bağlantı</string>
+    <string name="remote_ready">Şifreli uzaktan bağlantı açık. Bilgisayarın farklı ağlarda da güncelleme paylaşabilir.</string>
+    <string name="remote_setup_hint">Uzaktan erişim hazır değil. Bilgisayarında telefon paylaşımını açıp uzaktan paylaşımı etkinleştir.</string>
+    <string name="notifications_on">İstek bildirimleri açık</string>
+    <string name="notifications_off">İstek bildirimleri kapalı</string>
+    <string name="notification_timing">Arka plan kontrolleri anlık değil, aralıklıdır. Android pil tasarrufu için geciktirebilir. Hemen yenilemek için uygulamayı aç.</string>
+    <string name="notification_settings">Bildirim ayarları</string>
+    <string name="dashboard_family">Aile</string>
+    <string name="dashboard_today">Bugün</string>
+    <string name="snapshot_current">Güncel özet</string>
+    <string name="refreshing_short">Yenileniyor…</string>
+    <string name="refresh_short">Yenile</string>
+    <string name="usage_title">Kullanım özeti</string>
+    <string name="usage_description">Uygulamalar ve son yedi gün</string>
+    <string name="close_details">Kapat</string>
+    <string name="open_details">Ayrıntılar</string>
+    <string name="most_used">Bugün en çok kullanılan</string>
+    <string name="measurement_note">Uygulama kullanımı, ön planda geçirilen süreyi ölçer. Oturum sayacından farklı olabilir.</string>
+    <string name="state_active_short">Oturum devam ediyor</string>
+    <string name="state_paused_short">Mola veriliyor</string>
+    <string name="state_ready_short">Başlamaya hazır</string>
+    <string name="state_expired_short">Süre doldu</string>
+    <string name="state_outside_short">Planlanan saatlerin dışında</string>
+    <string name="offline_summary_hint">Son kayıtlı özet · canlı değil</string>
+    <string name="usage_ring_description">En çok kullanılan uygulamaların bugünkü kullanımdaki payı</string>
+    <string name="request_eyebrow">EK SÜRE TALEBİ</string>
+    <string name="request_approval_sent">Onay gönderildi. Bilgisayarın doğrulaması bekleniyor.</string>
+    <string name="request_rejection_sent">Karar gönderildi. Bilgisayarın doğrulaması bekleniyor.</string>
+    <string name="request_expires">Son geçerlilik: %1$s</string>
+    <string name="request_range">1 ile 180 dakika arasında seç.</string>
+    <string name="retry_decision">Aynı kararı yeniden gönder</string>
+    <string name="approve_minutes">%1$d dk onayla</string>
+    <string name="less_than_minute">1 dk’dan az</string>
+</resources>

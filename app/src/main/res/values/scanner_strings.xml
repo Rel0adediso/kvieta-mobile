@@ -1,0 +1,14 @@
+<resources>
+    <string name="scan_title">Connect your computer</string>
+    <string name="scan_hint">Open My phone in Kvieta on your computer. Place its Android QR code inside the frame.</string>
+    <string name="scan_permission">Allow camera access to scan your computer’s QR code.</string>
+    <string name="scan_allow">Allow camera access</string>
+    <string name="scan_permission_settings">Enable camera access</string>
+    <string name="scan_camera_error">The camera could not start. Close other apps using the camera and try again.</string>
+    <string name="scan_retry">Try camera again</string>
+    <string name="scan_invalid">This is not a valid Android invitation. Generate a new QR in My phone on your computer.</string>
+    <string name="scan_flash_on">Turn on flashlight</string>
+    <string name="scan_flash_off">Turn off flashlight</string>
+    <string name="scan_approval">After scanning, compare the code on both devices and approve on your computer.</string>
+    <string name="scan_manual">Go back and enter invitation manually</string>
+</resources>

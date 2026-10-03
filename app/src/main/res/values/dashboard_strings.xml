@@ -1,0 +1,37 @@
+<resources>
+    <string name="pair_step_scan">1 · Scan your computer’s QR code</string>
+    <string name="pair_step_approve">2 · Compare the codes and approve on your computer.</string>
+    <string name="connection_settings">Connection</string>
+    <string name="remote_ready">Encrypted remote connection is enabled. Your computer can share updates across different networks.</string>
+    <string name="remote_setup_hint">Remote access is not ready. Open phone sharing on your computer and enable remote sharing.</string>
+    <string name="notifications_on">Request notifications enabled</string>
+    <string name="notifications_off">Request notifications disabled</string>
+    <string name="notification_timing">Background checks are periodic, not instant. Android may delay them to save battery. Open the app to refresh now.</string>
+    <string name="notification_settings">Notification settings</string>
+    <string name="dashboard_family">Family</string>
+    <string name="dashboard_today">Today</string>
+    <string name="snapshot_current">Recent summary</string>
+    <string name="refreshing_short">Refreshing…</string>
+    <string name="refresh_short">Refresh</string>
+    <string name="usage_title">Your usage</string>
+    <string name="usage_description">Apps and the last seven days</string>
+    <string name="close_details">Close</string>
+    <string name="open_details">Details</string>
+    <string name="most_used">Most used today</string>
+    <string name="measurement_note">Application usage measures time in the foreground. It can differ from the session timer.</string>
+    <string name="state_active_short">Session in progress</string>
+    <string name="state_paused_short">Taking a break</string>
+    <string name="state_ready_short">Ready to begin</string>
+    <string name="state_expired_short">Time is up</string>
+    <string name="state_outside_short">Outside scheduled hours</string>
+    <string name="offline_summary_hint">Last recorded summary · not live</string>
+    <string name="usage_ring_description">Share of today’s usage by the most used apps</string>
+    <string name="request_eyebrow">TIME REQUEST</string>
+    <string name="request_approval_sent">Approval sent. Waiting for confirmation from the computer.</string>
+    <string name="request_rejection_sent">Decision sent. Waiting for confirmation from the computer.</string>
+    <string name="request_expires">Valid until %1$s</string>
+    <string name="request_range">Choose between 1 and 180 minutes.</string>
+    <string name="retry_decision">Retry the same decision</string>
+    <string name="approve_minutes">Approve %1$d min</string>
+    <string name="less_than_minute">Less than 1 min</string>
+</resources>
