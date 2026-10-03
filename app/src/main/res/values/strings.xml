@@ -96,4 +96,9 @@
     <string name="timeline_24h_desc">Hourly computer activity distribution today</string>
     <string name="avg_daily_usage">Daily average: %1$s</string>
     <string name="top_app_label">Top used: %1$s (%2$s)</string>
+    <string name="biometric_prompt_remote_action">Confirm Action</string>
+    <string name="biometric_prompt_grant_time">Confirm Extra Time</string>
+    <string name="biometric_prompt_save_rule">Confirm Rule Change</string>
+    <string name="biometric_prompt_subtitle">Verify fingerprint or device lock</string>
+    <string name="biometric_security_label">Biometric Security</string>
 </resources>

@@ -96,4 +96,9 @@
     <string name="timeline_24h_desc">Bugün saatlere göre bilgisayar kullanım dağılımı</string>
     <string name="avg_daily_usage">Günlük ortalama: %1$s</string>
     <string name="top_app_label">En çok kullanılan: %1$s (%2$s)</string>
+    <string name="biometric_prompt_remote_action">İşlemi Onayla</string>
+    <string name="biometric_prompt_grant_time">Ek Süreyi Onayla</string>
+    <string name="biometric_prompt_save_rule">Kural Değişikliğini Onayla</string>
+    <string name="biometric_prompt_subtitle">Parmak izinizi veya kilit ekranınızı doğrulayın</string>
+    <string name="biometric_security_label">Biyometrik Güvenlik</string>
 </resources>

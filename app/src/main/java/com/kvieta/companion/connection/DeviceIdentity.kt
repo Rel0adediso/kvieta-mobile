@@ -142,7 +142,10 @@ class DeviceIdentity(private val context: Context) : CompanionIdentity {
         val plain = cipher.doFinal(packed, 12, packed.size - 12)
         try { return org.json.JSONObject(plain.toString(Charsets.UTF_8)) } finally { plain.fill(0) }
     }
-    override fun cache(value: DesktopSnapshot?) = writePrivate("snapshot", value?.cacheJson())
+    override fun cache(value: DesktopSnapshot?) {
+        writePrivate("snapshot", value?.cacheJson())
+        com.kvieta.companion.widget.KvietaAppWidgetProvider.updateAll(context)
+    }
     override fun cached(): DesktopSnapshot? = readPrivate("snapshot")?.let(DesktopClient::parseSnapshot)
     override fun pendingDecision(): PendingDecision? = readPrivate("pendingDecision")?.let(PendingDecision::parse)
     override fun saveDecision(value: PendingDecision?) = writePrivate("pendingDecision", value?.json())

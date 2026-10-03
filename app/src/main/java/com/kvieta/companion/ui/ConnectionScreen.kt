@@ -92,14 +92,60 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
                     modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.qr_reconnect)) }
             }
         }
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val activity = context as? android.app.Activity
+        val authTitleAction = stringResource(R.string.biometric_prompt_remote_action)
+        val authTitleTime = stringResource(R.string.biometric_prompt_grant_time)
+        val authTitleRule = stringResource(R.string.biometric_prompt_save_rule)
+        val authSubtitle = stringResource(R.string.biometric_prompt_subtitle)
+
+        val safeSessionAction: (String) -> Unit = { cmd ->
+            if (activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)) {
+                com.kvieta.companion.security.BiometricHelper.authenticate(
+                    activity = activity,
+                    title = authTitleAction,
+                    subtitle = authSubtitle,
+                    onSuccess = { model.submitSessionAction(cmd) }
+                )
+            } else {
+                model.submitSessionAction(cmd)
+            }
+        }
+
+        val safeDecision: (TimeRequest, Boolean, Int?) -> Unit = { req, approve, minutes ->
+            if (activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)) {
+                com.kvieta.companion.security.BiometricHelper.authenticate(
+                    activity = activity,
+                    title = authTitleTime,
+                    subtitle = authSubtitle,
+                    onSuccess = { model.decide(req, approve, minutes) }
+                )
+            } else {
+                model.decide(req, approve, minutes)
+            }
+        }
+
+        val safeAppRuleSave: (String, String, Int) -> Unit = { name, modeStr, limit ->
+            if (activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)) {
+                com.kvieta.companion.security.BiometricHelper.authenticate(
+                    activity = activity,
+                    title = authTitleRule,
+                    subtitle = authSubtitle,
+                    onSuccess = { model.submitAppRule(name, modeStr, limit) }
+                )
+            } else {
+                model.submitAppRule(name, modeStr, limit)
+            }
+        }
+
         DashboardContent(data = model.snapshot!!, connected = model.status == LinkStatus.CONNECTED,
             refreshing = model.refreshing, now = now, canDecide = model.remoteAvailable,
             decisionStatus = model.decisionStatus, onRefresh = model::refresh,
-            onConnection = { settings = true }, onDecision = model::decide,
+            onConnection = { settings = true }, onDecision = safeDecision,
             planSaving = model.planSaving, planSaved = model.planSaved, onPlanSave = model::submitPlan,
             remoteActionExecuting = model.remoteActionExecuting, remoteActionMessage = model.remoteActionMessage,
-            onSessionAction = model::submitSessionAction, ruleSaving = model.ruleSaving,
-            onAppRuleSave = model::submitAppRule)
+            onSessionAction = safeSessionAction, ruleSaving = model.ruleSaving,
+            onAppRuleSave = safeAppRuleSave)
     } else if (model.status != LinkStatus.IDLE) {
         KvietaPanel {
             if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
