@@ -101,4 +101,19 @@
     <string name="biometric_prompt_save_rule">Confirm Rule Change</string>
     <string name="biometric_prompt_subtitle">Verify fingerprint or device lock</string>
     <string name="biometric_security_label">Biometric Security</string>
+    <string name="tab_web">Web Guard</string>
+    <string name="web_guard_title">Web Guard &amp; Filters</string>
+    <string name="web_guard_desc">Block harmful websites and enforce search filters remotely</string>
+    <string name="web_guard_enable">Web Guard</string>
+    <string name="web_guard_enable_desc">Blocks unauthorized domains and enforces parental security</string>
+    <string name="web_guard_safesearch">SafeSearch &amp; YouTube Restricted</string>
+    <string name="web_guard_safesearch_desc">Forces strict safe search on Google, Bing and restricts adult YouTube content</string>
+    <string name="web_guard_blocked_domains">Blocked Websites</string>
+    <string name="web_guard_blocked_domains_desc">Domains blocked on the computer</string>
+    <string name="web_guard_add_domain">Block Website</string>
+    <string name="web_guard_domain_hint">e.g. tiktok.com, instagram.com</string>
+    <string name="web_guard_remove">Remove</string>
+    <string name="web_guard_empty">No blocked websites added yet.</string>
+    <string name="web_guard_saving">Saving web guard…</string>
+    <string name="biometric_prompt_web_guard">Confirm Web Guard</string>
 </resources>

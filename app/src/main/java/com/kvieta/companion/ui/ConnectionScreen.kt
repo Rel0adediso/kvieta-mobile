@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,7 +19,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -139,6 +143,20 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
             }
         }
 
+        val authTitleWebGuard = stringResource(R.string.biometric_prompt_web_guard)
+        val safeWebGuardChange: (Boolean?, Boolean?, List<String>?, String?, String?) -> Unit = { enabled, safeSearch, domains, act, dom ->
+            if (activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)) {
+                com.kvieta.companion.security.BiometricHelper.authenticate(
+                    activity = activity,
+                    title = authTitleWebGuard,
+                    subtitle = authSubtitle,
+                    onSuccess = { model.submitWebGuard(enabled, safeSearch, domains, act, dom) }
+                )
+            } else {
+                model.submitWebGuard(enabled, safeSearch, domains, act, dom)
+            }
+        }
+
         DashboardContent(data = model.snapshot!!, connected = model.status == LinkStatus.CONNECTED,
             refreshing = model.refreshing, now = now, canDecide = model.remoteAvailable,
             decisionStatus = model.decisionStatus, onRefresh = model::refresh,
@@ -146,7 +164,9 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
             planSaving = model.planSaving, planSaved = model.planSaved, onPlanSave = model::submitPlan,
             remoteActionExecuting = model.remoteActionExecuting, remoteActionMessage = model.remoteActionMessage,
             onSessionAction = safeSessionAction, ruleSaving = model.ruleSaving,
-            onAppRuleSave = safeAppRuleSave)
+            onAppRuleSave = safeAppRuleSave,
+            webGuardSaving = model.webGuardSaving, webGuardMessage = model.webGuardMessage,
+            onWebGuardChange = safeWebGuardChange)
     } else if (model.status != LinkStatus.IDLE) {
         KvietaPanel {
             if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -215,12 +235,53 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
 }
 
 @Composable
+fun AppIconBadge(
+    name: String,
+    iconBase64: String?,
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 40.dp,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(12.dp)
+) {
+    val imageBitmap = remember(iconBase64) {
+        if (!iconBase64.isNullOrBlank()) {
+            runCatching {
+                val decoded = Base64.decode(iconBase64, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(decoded, 0, decoded.size)?.asImageBitmap()
+            }.getOrNull()
+        } else null
+    }
+
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = shape,
+        modifier = modifier.size(size)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (imageBitmap != null) {
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = name,
+                    modifier = Modifier.size(size * 0.72f)
+                )
+            } else {
+                Text(
+                    text = name.take(1).uppercase(Locale.getDefault()),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun DashboardContent(data: DesktopSnapshot, connected: Boolean, refreshing: Boolean, now: Instant,
     canDecide: Boolean, decisionStatus: DecisionStatus, onRefresh: () -> Unit, onConnection: () -> Unit,
     planSaving: Boolean = false, planSaved: Boolean = false, onPlanSave: (List<PlanDay>) -> Unit = {},
     remoteActionExecuting: Boolean = false, remoteActionMessage: String? = null,
     onSessionAction: (String) -> Unit = {}, ruleSaving: Boolean = false,
     onAppRuleSave: (String, String, Int) -> Unit = { _, _, _ -> },
+    webGuardSaving: Boolean = false, webGuardMessage: String? = null,
+    onWebGuardChange: (Boolean?, Boolean?, List<String>?, String?, String?) -> Unit = { _, _, _, _, _ -> },
     onDecision: (TimeRequest, Boolean, Int?) -> Unit) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var details by rememberSaveable { mutableStateOf(false) }
@@ -234,6 +295,7 @@ fun DashboardContent(data: DesktopSnapshot, connected: Boolean, refreshing: Bool
         val app = selectedAppForRule!!
         AppRuleDialog(
             appName = app.name,
+            iconBase64 = app.iconBase64,
             initialMode = app.mode,
             initialLimitMinutes = app.limitMinutes ?: 45,
             saving = ruleSaving,
@@ -263,14 +325,16 @@ fun DashboardContent(data: DesktopSnapshot, connected: Boolean, refreshing: Bool
             }
         }
 
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
+            edgePadding = 0.dp,
             containerColor = Color.Transparent,
             divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)) }
         ) {
             val tabTitles = listOf(
                 stringResource(R.string.tab_today),
                 stringResource(R.string.tab_apps),
+                stringResource(R.string.tab_web),
                 stringResource(R.string.tab_reports),
                 stringResource(R.string.tab_schedule)
             )
@@ -321,9 +385,7 @@ fun DashboardContent(data: DesktopSnapshot, connected: Boolean, refreshing: Bool
                     }
                     data.apps.take(if (details) data.apps.size else 3).forEachIndexed { index, app ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(14.dp), modifier = Modifier.size(44.dp)) {
-                                Box(contentAlignment = Alignment.Center) { Text(app.name.take(1).uppercase(Locale.getDefault()), fontWeight = FontWeight.SemiBold) }
-                            }
+                            AppIconBadge(name = app.name, iconBase64 = app.iconBase64, size = 44.dp, shape = RoundedCornerShape(14.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(app.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)
                                 LinearProgressIndicator(
@@ -377,15 +439,7 @@ fun DashboardContent(data: DesktopSnapshot, connected: Boolean, refreshing: Bool
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(app.name.take(1).uppercase(Locale.getDefault()), fontWeight = FontWeight.SemiBold)
-                                    }
-                                }
+                                AppIconBadge(name = app.name, iconBase64 = app.iconBase64, size = 40.dp, shape = RoundedCornerShape(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(app.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                                     Text(usageDuration(app.seconds), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -419,6 +473,15 @@ fun DashboardContent(data: DesktopSnapshot, connected: Boolean, refreshing: Bool
                 }
             }
             2 -> {
+                WebGuardPanel(
+                    data = data,
+                    connected = connected && (canDecide || family),
+                    saving = webGuardSaving,
+                    statusMessage = webGuardMessage,
+                    onChange = onWebGuardChange
+                )
+            }
+            3 -> {
                 KvietaPanel {
                     Text(stringResource(R.string.timeline_24h_title), style = MaterialTheme.typography.titleLarge)
                     Text(stringResource(R.string.timeline_24h_desc), style = MaterialTheme.typography.bodySmall,
@@ -442,7 +505,7 @@ fun DashboardContent(data: DesktopSnapshot, connected: Boolean, refreshing: Bool
                     }
                 }
             }
-            3 -> {
+            4 -> {
                 if (data.schedule.isNotEmpty()) {
                     KvietaPanel {
                         Text(stringResource(R.string.plan_title), style = MaterialTheme.typography.titleLarge)
@@ -831,6 +894,7 @@ private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, v
 @Composable
 private fun AppRuleDialog(
     appName: String,
+    iconBase64: String? = null,
     initialMode: String,
     initialLimitMinutes: Int,
     saving: Boolean,
@@ -842,7 +906,12 @@ private fun AppRuleDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.edit_rule_title, appName)) },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                AppIconBadge(name = appName, iconBase64 = iconBase64, size = 32.dp)
+                Text(stringResource(R.string.edit_rule_title, appName), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -1082,6 +1151,226 @@ fun RequestCard(request: TimeRequest, canDecide: Boolean, decisionStatus: Decisi
                     modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.request_reject)) }
                 }
                 if (retry) Text(stringResource(R.string.request_failed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+@Composable
+fun WebGuardPanel(
+    data: DesktopSnapshot,
+    connected: Boolean,
+    saving: Boolean,
+    statusMessage: String?,
+    onChange: (webGuardEnabled: Boolean?, safeSearchEnforced: Boolean?, blockedDomains: List<String>?, action: String?, domain: String?) -> Unit
+) {
+    var showAddDialog by remember { mutableStateOf(false) }
+    var domainToAdd by remember { mutableStateOf("") }
+    var domainError by remember { mutableStateOf<String?>(null) }
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false; domainToAdd = ""; domainError = null },
+            title = { Text(stringResource(R.string.web_guard_add_domain)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.web_guard_domain_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = domainToAdd,
+                        onValueChange = {
+                            domainToAdd = it.trim().lowercase(Locale.getDefault())
+                                .replace("https://", "")
+                                .replace("http://", "")
+                                .replace("/", "")
+                            domainError = null
+                        },
+                        label = { Text("Web Adresi / Alan Adı") },
+                        singleLine = true,
+                        isError = domainError != null,
+                        supportingText = domainError?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val cleaned = domainToAdd.trim().lowercase(Locale.getDefault())
+                        if (cleaned.isBlank() || !cleaned.contains(".")) {
+                            domainError = "Geçerli bir alan adı girin (örn: tiktok.com)"
+                            return@Button
+                        }
+                        onChange(null, null, null, "add-domain", cleaned)
+                        showAddDialog = false
+                        domainToAdd = ""
+                        domainError = null
+                    },
+                    enabled = !saving && connected
+                ) {
+                    Text("Engelle")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false; domainToAdd = ""; domainError = null }) {
+                    Text(stringResource(R.string.link_cancel))
+                }
+            }
+        )
+    }
+
+    KvietaPanel {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.web_guard_title), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.web_guard_desc), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (saving) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+        }
+
+        if (statusMessage != null) {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = statusMessage,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.web_guard_enable), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.web_guard_enable_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(
+                    checked = data.webGuardEnabled,
+                    onCheckedChange = { checked ->
+                        onChange(checked, null, null, null, null)
+                    },
+                    enabled = connected && !saving
+                )
+            }
+        }
+
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.web_guard_safesearch), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.web_guard_safesearch_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(
+                    checked = data.safeSearchEnforced,
+                    onCheckedChange = { checked ->
+                        val enableGuard = if (checked && !data.webGuardEnabled) true else null
+                        onChange(enableGuard, checked, null, null, null)
+                    },
+                    enabled = connected && !saving
+                )
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.web_guard_blocked_domains), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "${data.blockedWebDomains.size} web sitesi engelli",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            FilledTonalButton(
+                onClick = { showAddDialog = true },
+                enabled = connected && !saving,
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Text("+ " + stringResource(R.string.web_guard_add_domain))
+            }
+        }
+
+        if (data.blockedWebDomains.isEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    stringResource(R.string.web_guard_empty),
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                data.blockedWebDomains.forEach { domain ->
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("⛔", fontSize = 14.sp)
+                                }
+                            }
+                            Text(
+                                domain,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    onChange(null, null, null, "remove-domain", domain)
+                                },
+                                enabled = connected && !saving,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Text("✕", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

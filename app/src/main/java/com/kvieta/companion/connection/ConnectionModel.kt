@@ -51,6 +51,8 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
     var remoteActionExecuting by mutableStateOf(false); private set
     var remoteActionMessage by mutableStateOf<String?>(null); private set
     var ruleSaving by mutableStateOf(false); private set
+    var webGuardSaving by mutableStateOf(false); private set
+    var webGuardMessage by mutableStateOf<String?>(null); private set
 
     init {
         viewModelScope.launch {
@@ -382,6 +384,40 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
                 } catch (ex: CancellationException) { throw ex }
                 catch (_: Exception) {}
                 finally { ruleSaving = false }
+            }
+        }
+    }
+
+    fun submitWebGuard(
+        webGuardEnabled: Boolean? = null,
+        safeSearchEnforced: Boolean? = null,
+        blockedWebDomains: List<String>? = null,
+        action: String? = null,
+        domain: String? = null
+    ) {
+        if (webGuardSaving || !remoteAvailable) return
+        webGuardSaving = true
+        webGuardMessage = null
+        viewModelScope.launch {
+            operations.withLock {
+                try {
+                    val remote = withContext(Dispatchers.IO) { identity.remote() ?: error("Remote access unavailable") }
+                    val prepared = withContext(Dispatchers.IO) {
+                        val decision = RelayClient.prepareWebGuardDecision(
+                            remote, webGuardEnabled, safeSearchEnforced, blockedWebDomains, action, domain
+                        )
+                        identity.saveDecision(decision)
+                        RelayClient.sendPreparedDecision(remote, decision)
+                        decision.copy(sent = true).also { identity.saveDecision(it) }
+                    }
+                    outgoing = prepared
+                    webGuardMessage = "Güncellendi"
+                    withContext(Dispatchers.IO) { delay(1200) }
+                    val received = withContext(Dispatchers.IO) { runCatching { fetchSnapshot(active, remote) }.getOrNull() }
+                    if (received != null) accept(received)
+                } catch (ex: CancellationException) { throw ex }
+                catch (ex: Exception) { webGuardMessage = "İşlem iletilemedi: ${ex.message}" }
+                finally { webGuardSaving = false }
             }
         }
     }

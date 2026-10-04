@@ -14,7 +14,7 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.X509TrustManager
 
 class DesktopRejected : IOException()
-data class DesktopUsage(val name: String, val seconds: Long, val limitMinutes: Int? = null, val mode: String = "Unlimited")
+data class DesktopUsage(val name: String, val seconds: Long, val limitMinutes: Int? = null, val mode: String = "Unlimited", val iconBase64: String? = null)
 data class HourlyUsage(val hour: Int, val seconds: Long)
 data class AppRuleDto(val name: String, val mode: String, val dailyLimitMinutes: Int)
 data class DesktopDay(val day: String, val seconds: Long)
@@ -36,6 +36,9 @@ data class DesktopSnapshot(
     val canPauseRemotely: Boolean = false,
     val hourlyUsage: List<HourlyUsage> = emptyList(),
     val appRules: List<AppRuleDto> = emptyList(),
+    val webGuardEnabled: Boolean = false,
+    val safeSearchEnforced: Boolean = false,
+    val blockedWebDomains: List<String> = emptyList(),
 )
 
 fun TimeRequest.isPending(now: java.time.Instant = java.time.Instant.now()): Boolean =
@@ -108,7 +111,8 @@ class DesktopClient(private val identity: SigningIdentity, private val deviceNam
             List(apps.length()) { i -> apps.getJSONObject(i).let {
                 DesktopUsage(it.getString("name"), it.getLong("seconds"),
                     if (it.isNull("limitMinutes")) null else it.getInt("limitMinutes"),
-                    it.optString("mode", "Unlimited"))
+                    it.optString("mode", "Unlimited"),
+                    it.optionalText("iconBase64"))
             } },
             data.optString("sessionState", "Unknown"), timeRequest = request,
             remoteDecisionToken = data.optionalText("remoteDecisionToken"), weeklyUsage = week,
@@ -119,7 +123,12 @@ class DesktopClient(private val identity: SigningIdentity, private val deviceNam
             canLockRemotely = data.optBoolean("canLockRemotely", false),
             canPauseRemotely = data.optBoolean("canPauseRemotely", false),
             hourlyUsage = hourly,
-            appRules = rules)
+            appRules = rules,
+            webGuardEnabled = data.optBoolean("webGuardEnabled", false),
+            safeSearchEnforced = data.optBoolean("safeSearchEnforced", false),
+            blockedWebDomains = data.optJSONArray("blockedWebDomains")?.let { values ->
+                List(values.length()) { index -> values.getString(index) }
+            } ?: emptyList())
     }
     }
 
@@ -155,7 +164,7 @@ class DesktopClient(private val identity: SigningIdentity, private val deviceNam
             connection.outputStream.use { it.write(bytes) }
             if (connection.responseCode == 403) throw DesktopRejected()
             if (connection.responseCode != 200) throw IOException("Desktop response rejected")
-            val response = connection.inputStream.use { it.readBytesLimited(65536) }
+            val response = connection.inputStream.use { it.readBytesLimited(262144) }
             return JSONObject(response.toString(Charsets.UTF_8))
         } finally { connection.disconnect() }
     }

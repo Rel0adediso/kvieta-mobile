@@ -101,4 +101,19 @@
     <string name="biometric_prompt_save_rule">Kural Değişikliğini Onayla</string>
     <string name="biometric_prompt_subtitle">Parmak izinizi veya kilit ekranınızı doğrulayın</string>
     <string name="biometric_security_label">Biyometrik Güvenlik</string>
+    <string name="tab_web">Web Koruması</string>
+    <string name="web_guard_title">Web Koruması ve Filtreler</string>
+    <string name="web_guard_desc">Zararlı siteleri uzaktan engelle ve güvenli arama filtrelerini yönet</string>
+    <string name="web_guard_enable">Web Koruması</string>
+    <string name="web_guard_enable_desc">Engelli alan adlarını engeller ve ebeveyn koruma kurallarını uygular</string>
+    <string name="web_guard_safesearch">Güvenli Arama ve Kısıtlı YouTube</string>
+    <string name="web_guard_safesearch_desc">Google, Bing katı aramasını ve YouTube kısıtlı modunu zorunlu kılar</string>
+    <string name="web_guard_blocked_domains">Engellenen Web Siteleri</string>
+    <string name="web_guard_blocked_domains_desc">Bilgisayarda erişimi engellenmiş siteler</string>
+    <string name="web_guard_add_domain">Site Engelle</string>
+    <string name="web_guard_domain_hint">Örn: tiktok.com, instagram.com</string>
+    <string name="web_guard_remove">Kaldır</string>
+    <string name="web_guard_empty">Henüz engellenen web sitesi eklenmemiş.</string>
+    <string name="web_guard_saving">Web koruması güncelleniyor…</string>
+    <string name="biometric_prompt_web_guard">Web Korumasını Onayla</string>
 </resources>

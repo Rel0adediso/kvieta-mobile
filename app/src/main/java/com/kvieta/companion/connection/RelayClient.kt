@@ -33,7 +33,7 @@ object RelayClient {
             connection.setRequestProperty("Authorization", "Bearer " + settings.readToken)
             if (connection.responseCode == 410) throw DesktopRejected()
             if (connection.responseCode != 200) throw IOException("Remote summary unavailable")
-            val bytes = connection.inputStream.use { it.readBytesLimited(65536) }
+            val bytes = connection.inputStream.use { it.readBytesLimited(262144) }
             return decrypt(settings, JSONObject(bytes.toString(Charsets.UTF_8)), minimumSequence, acceptSequence)
         } finally { connection.disconnect() }
     }
@@ -114,6 +114,35 @@ object RelayClient {
             .put("payloadJson", payloadJson)
         val box = encryptDecision(settings, payload.toString().toByteArray(Charsets.UTF_8))
         return PendingDecision(decisionId, decisionId, false, null, sequence, box, settings.room, action = "pair-device", payloadJson = payloadJson)
+    }
+
+    fun prepareWebGuardDecision(
+        settings: RelaySettings,
+        webGuardEnabled: Boolean? = null,
+        safeSearchEnforced: Boolean? = null,
+        blockedWebDomains: List<String>? = null,
+        action: String? = null,
+        domain: String? = null
+    ): PendingDecision {
+        require(settings.decisionToken.matches(Regex("[a-f0-9]{64}")))
+        val decisionId = java.util.UUID.randomUUID().toString()
+        val sequence = System.currentTimeMillis()
+        val payloadObj = JSONObject()
+        webGuardEnabled?.let { payloadObj.put("webGuardEnabled", it) }
+        safeSearchEnforced?.let { payloadObj.put("safeSearchEnforced", it) }
+        blockedWebDomains?.let { domains ->
+            val arr = org.json.JSONArray()
+            domains.forEach { arr.put(it) }
+            payloadObj.put("blockedWebDomains", arr)
+        }
+        action?.let { payloadObj.put("action", it) }
+        domain?.let { payloadObj.put("domain", it) }
+        val payloadJson = payloadObj.toString()
+        val payload = JSONObject().put("sequence", sequence).put("decisionId", decisionId).put("requestId", decisionId)
+            .put("action", "update-web-guard").put("grantedMinutes", JSONObject.NULL).put("decidedAtUtc", java.time.Instant.now().toString())
+            .put("payloadJson", payloadJson)
+        val box = encryptDecision(settings, payload.toString().toByteArray(Charsets.UTF_8))
+        return PendingDecision(decisionId, decisionId, false, null, sequence, box, settings.room, action = "update-web-guard", payloadJson = payloadJson)
     }
 
     fun sendPreparedDecision(settings: RelaySettings, decision: PendingDecision) {
