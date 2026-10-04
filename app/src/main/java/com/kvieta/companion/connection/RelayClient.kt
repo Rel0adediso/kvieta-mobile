@@ -104,6 +104,18 @@ object RelayClient {
         return PendingDecision(decisionId, decisionId, false, null, sequence, box, settings.room, action = "update-app-rule", payloadJson = payloadJson)
     }
 
+    fun prepareDevicePairDecision(settings: RelaySettings, deviceName: String): PendingDecision {
+        require(settings.decisionToken.matches(Regex("[a-f0-9]{64}")))
+        val decisionId = java.util.UUID.randomUUID().toString()
+        val sequence = System.currentTimeMillis()
+        val payloadJson = JSONObject().put("deviceName", deviceName.take(64)).toString()
+        val payload = JSONObject().put("sequence", sequence).put("decisionId", decisionId).put("requestId", decisionId)
+            .put("action", "pair-device").put("grantedMinutes", JSONObject.NULL).put("decidedAtUtc", java.time.Instant.now().toString())
+            .put("payloadJson", payloadJson)
+        val box = encryptDecision(settings, payload.toString().toByteArray(Charsets.UTF_8))
+        return PendingDecision(decisionId, decisionId, false, null, sequence, box, settings.room, action = "pair-device", payloadJson = payloadJson)
+    }
+
     fun sendPreparedDecision(settings: RelaySettings, decision: PendingDecision) {
         require(decision.room == settings.room)
         val connection = URL(settings.origin + "/v1/rooms/" + settings.room + "/decision").openConnection() as HttpsURLConnection
@@ -114,8 +126,8 @@ object RelayClient {
             connection.setRequestProperty("Content-Type", "application/json")
             val bytes = JSONObject().put("sequence", decision.sequence).put("box", decision.box).toString().toByteArray(Charsets.UTF_8)
             connection.setFixedLengthStreamingMode(bytes.size); connection.outputStream.use { it.write(bytes) }
-            if (connection.responseCode == 410 || connection.responseCode == 403) throw DesktopRejected()
-            if (connection.responseCode != 200) throw IOException("Decision could not be delivered")
+            if (connection.responseCode == 410) throw DesktopRejected()
+            if (connection.responseCode != 200) throw IOException("Decision could not be delivered: HTTP ${connection.responseCode}")
         } finally { connection.disconnect() }
     }
 

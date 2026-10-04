@@ -2,6 +2,7 @@ package com.kvieta.companion.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -464,40 +465,198 @@ fun DashboardContent(data: DesktopSnapshot, connected: Boolean, refreshing: Bool
 }
 
 @Composable
-private fun PlanEditor(schedule: List<PlanDay>, saving: Boolean, saved: Boolean,
-    onChange: (List<PlanDay>) -> Unit, onSave: (List<PlanDay>) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        schedule.forEachIndexed { index, day ->
-            val dayName = stringResource(when (day.day.lowercase(Locale.ROOT)) {
-                "monday" -> R.string.day_monday; "tuesday" -> R.string.day_tuesday; "wednesday" -> R.string.day_wednesday
-                "thursday" -> R.string.day_thursday; "friday" -> R.string.day_friday; "saturday" -> R.string.day_saturday
-                else -> R.string.day_sunday
-            })
-            Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp)) {
-                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(dayName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        Switch(checked = day.enabled, onCheckedChange = { value -> onChange(schedule.toMutableList().also { it[index] = day.copy(enabled = value) }) })
+private fun PlanEditor(
+    schedule: List<PlanDay>,
+    saving: Boolean,
+    saved: Boolean,
+    onChange: (List<PlanDay>) -> Unit,
+    onSave: (List<PlanDay>) -> Unit
+) {
+    if (schedule.isEmpty()) return
+
+    var selectedDayIndex by rememberSaveable { mutableIntStateOf(0) }
+    val day = schedule.getOrElse(selectedDayIndex) { schedule.first() }
+
+    val dayLabels = listOf("Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz")
+    val fullDayNames = listOf("Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar")
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // 1. Day Selector Tab Bar / Chips
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            schedule.forEachIndexed { index, item ->
+                val isSelected = selectedDayIndex == index
+                val label = dayLabels.getOrElse(index) { item.day.take(3) }
+                Surface(
+                    onClick = { selectedDayIndex = index },
+                    modifier = Modifier.weight(1f).height(46.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else if (item.enabled) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Column(
+                        Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                        )
+                        Box(
+                            Modifier.size(4.dp).clip(CircleShape).background(
+                                if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                else if (item.enabled) Color(0xFF4CAF50)
+                                else Color.Transparent
+                            )
+                        )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(day.from, { value -> onChange(schedule.toMutableList().also { it[index] = day.copy(from = value.take(5)) }) },
-                            label = { Text(stringResource(R.string.plan_from)) }, singleLine = true, modifier = Modifier.weight(1f))
-                        OutlinedTextField(day.until, { value -> onChange(schedule.toMutableList().also { it[index] = day.copy(until = value.take(5)) }) },
-                            label = { Text(stringResource(R.string.plan_until)) }, singleLine = true, modifier = Modifier.weight(1f))
-                    }
-                    OutlinedTextField(day.dailyLimitMinutes.toString(), { value ->
-                        val minutes = value.filter(Char::isDigit).take(4).toIntOrNull() ?: 0
-                        onChange(schedule.toMutableList().also { it[index] = day.copy(dailyLimitMinutes = minutes.coerceIn(0, 1440)) })
-                    }, label = { Text(stringResource(R.string.plan_limit)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 }
             }
         }
-        Button(onClick = { onSave(schedule) }, enabled = !saving, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (saving) R.string.plan_saving else if (saved) R.string.plan_saved else R.string.plan_save))
+
+        // 2. Active Day Detail Card
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Header with day name and enabled switch
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            fullDayNames.getOrElse(selectedDayIndex) { day.day },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            if (day.enabled) "Kural açık · Kullanım süresi sınırlı" else "Kural kapalı · Serbest kullanım",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = day.enabled,
+                        onCheckedChange = { value ->
+                            onChange(schedule.toMutableList().also { it[selectedDayIndex] = day.copy(enabled = value) })
+                        }
+                    )
+                }
+
+                if (day.enabled) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    // Daily limit presets & input
+                    Text("Günlük Süre Limiti", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf(60 to "1 Saat", 120 to "2 Saat", 180 to "3 Saat", 240 to "4 Saat").forEach { (mins, text) ->
+                            val isPreset = day.dailyLimitMinutes == mins
+                            Surface(
+                                onClick = {
+                                    onChange(schedule.toMutableList().also { it[selectedDayIndex] = day.copy(dailyLimitMinutes = mins) })
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isPreset) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                border = BorderStroke(1.dp, if (isPreset) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier.weight(1f).height(38.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = if (isPreset) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isPreset) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = day.dailyLimitMinutes.toString(),
+                        onValueChange = { value ->
+                            val minutes = value.filter(Char::isDigit).take(4).toIntOrNull() ?: 0
+                            onChange(schedule.toMutableList().also { it[selectedDayIndex] = day.copy(dailyLimitMinutes = minutes.coerceIn(0, 1440)) })
+                        },
+                        label = { Text("Özel Limit (Dakika)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+
+                    // Time range
+                    Text("İzin Verilen Saat Aralığı", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = day.from,
+                            onValueChange = { value -> onChange(schedule.toMutableList().also { it[selectedDayIndex] = day.copy(from = value.take(5)) }) },
+                            label = { Text(stringResource(R.string.plan_from)) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = day.until,
+                            onValueChange = { value -> onChange(schedule.toMutableList().also { it[selectedDayIndex] = day.copy(until = value.take(5)) }) },
+                            label = { Text(stringResource(R.string.plan_until)) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    // Quick Copy Helpers
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = {
+                                val updated = schedule.map { it.copy(enabled = day.enabled, from = day.from, until = day.until, dailyLimitMinutes = day.dailyLimitMinutes) }
+                                onChange(updated)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("⚡ Tüm Günlere Kopyala", style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                val updated = schedule.mapIndexed { idx, item ->
+                                    if (idx in 0..4) item.copy(enabled = day.enabled, from = day.from, until = day.until, dailyLimitMinutes = day.dailyLimitMinutes)
+                                    else item
+                                }
+                                onChange(updated)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Pzt-Cum Uygula", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
         }
-        Text(stringResource(R.string.plan_safety), style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        // 3. Save Button
+        Button(
+            onClick = { onSave(schedule) },
+            enabled = !saving,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Text(
+                stringResource(if (saving) R.string.plan_saving else if (saved) R.string.plan_saved else R.string.plan_save),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleSmall
+            )
+        }
+
+        Text(
+            stringResource(R.string.plan_safety),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -514,7 +673,7 @@ private fun RemoteControlsCard(
     if (showLockConfirm) {
         AlertDialog(
             onDismissRequest = { showLockConfirm = false },
-            title = { Text(stringResource(R.string.remote_lock_now)) },
+            title = { Text(stringResource(R.string.remote_lock_now), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.remote_lock_confirm)) },
             confirmButton = {
                 Button(
@@ -524,7 +683,7 @@ private fun RemoteControlsCard(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text(stringResource(R.string.remote_lock_now))
+                    Text(stringResource(R.string.remote_lock_now), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -536,92 +695,138 @@ private fun RemoteControlsCard(
     }
 
     KvietaPanel {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.remote_controls_title), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(R.string.remote_controls_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            val statusColor = when {
-                data.isRemotelyLocked -> MaterialTheme.colorScheme.error
-                data.sessionState == "Active" -> Color(0xFF4CAF50)
-                data.sessionState == "Paused" -> Color(0xFFFFA000)
-                else -> MaterialTheme.colorScheme.outline
-            }
-            val statusText = when {
-                data.isRemotelyLocked -> stringResource(R.string.remote_status_locked)
-                data.sessionState == "Active" -> stringResource(R.string.remote_status_active)
-                data.sessionState == "Paused" -> stringResource(R.string.remote_status_paused)
-                else -> stringResource(R.string.link_state_unknown)
-            }
-            Surface(
-                color = statusColor.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    statusText,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = statusColor,
-                    fontWeight = FontWeight.SemiBold
-                )
+        Text(stringResource(R.string.remote_controls_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(
+            stringResource(R.string.remote_controls_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // Prominent High-Contrast Status Banner
+        val (bannerBg, bannerFg, bannerTitle, bannerDesc) = when {
+            data.isRemotelyLocked -> Quad(
+                MaterialTheme.colorScheme.errorContainer,
+                MaterialTheme.colorScheme.onErrorContainer,
+                "🔒 Bilgisayar Kilitlendi",
+                "Ekran kilitlendi ve karartıldı. PIN veya bu menüden açılabilir."
+            )
+            data.sessionState == "Paused" -> Quad(
+                Color(0xFFFFF3E0),
+                Color(0xFFBF360C),
+                "☕ Oturuma Mola Verildi",
+                "Kullanım süresi sayacı duraklatıldı."
+            )
+            data.sessionState == "Active" -> Quad(
+                Color(0xFFE8F5E9),
+                Color(0xFF1B5E20),
+                "🟢 Bilgisayar Aktif Kullanılıyor",
+                "Oturum açık ve ekran kullanım kuralları devrede."
+            )
+            else -> Quad(
+                MaterialTheme.colorScheme.surfaceVariant,
+                MaterialTheme.colorScheme.onSurfaceVariant,
+                "🖥️ Oturum Hazır",
+                "Bilgisayar bağlı."
+            )
+        }
+
+        Surface(
+            color = bannerBg,
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(14.dp)) {
+                Text(bannerTitle, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = bannerFg)
+                Text(bannerDesc, style = MaterialTheme.typography.bodySmall, color = bannerFg.copy(alpha = 0.85f))
             }
         }
 
         if (executing) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp))
             Text(
                 stringResource(R.string.remote_action_executing),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
             )
         }
 
         if (!message.isNullOrBlank()) {
-            Text(
-                message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
-            )
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    message,
+                    modifier = Modifier.padding(10.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedButton(
-                onClick = { showLockConfirm = true },
-                enabled = connected && !executing,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text(stringResource(R.string.remote_lock_now), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
+        // Action Controls - Spacious, clearly readable, never truncated
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            if (data.isRemotelyLocked) {
+                // When locked: Prominent unlock/resume button
+                Button(
+                    onClick = { onAction("resume") },
+                    enabled = connected && !executing,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Text("▶️ Kilidi Aç ve Devam Ettir", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, color = Color.White)
+                }
+            } else if (data.sessionState == "Paused") {
+                // When paused: Resume or Lock
+                Button(
+                    onClick = { onAction("resume") },
+                    enabled = connected && !executing,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Text("▶️ Molayı Bitir ve Devam Et", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, color = Color.White)
+                }
 
-            OutlinedButton(
-                onClick = { onAction("pause") },
-                enabled = connected && !executing && data.sessionState == "Active",
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(stringResource(R.string.remote_pause), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
+                OutlinedButton(
+                    onClick = { showLockConfirm = true },
+                    enabled = connected && !executing,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("🔒 Bilgisayarı Kilitle", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                }
+            } else {
+                // When active: Lock and Pause
+                Button(
+                    onClick = { showLockConfirm = true },
+                    enabled = connected && !executing,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("🔒 Bilgisayarı Hemen Kilitle", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onError)
+                }
 
-            Button(
-                onClick = { onAction("resume") },
-                enabled = connected && !executing && (data.isRemotelyLocked || data.sessionState != "Active"),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(stringResource(R.string.remote_resume), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                OutlinedButton(
+                    onClick = { onAction("pause") },
+                    enabled = connected && !executing,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("☕ 15 Dakika Mola Ver (Duraklat)", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }
 }
+
+private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Composable
 private fun AppRuleDialog(

@@ -61,7 +61,7 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
                 }
                 saved = active != null || withContext(Dispatchers.IO) { identity.remote() } != null
                 snapshot = withContext(Dispatchers.IO) { identity.cached() }
-                if (saved) status = LinkStatus.OFFLINE else snapshot = null
+                if (saved) status = if (snapshot != null) LinkStatus.CONNECTED else LinkStatus.OFFLINE else snapshot = null
                 readRemoteState()
             } catch (ex: CancellationException) { throw ex }
             catch (_: Exception) { status = LinkStatus.OFFLINE }
@@ -77,7 +77,7 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
             while (isActive) {
                 if (saved && requestJob?.isActive != true && status != LinkStatus.REJECTED) refreshOnce()
                 val hasPending = snapshot?.timeRequest?.isPending() == true
-                delay(if (hasPending) 5000 else 25000)
+                delay(if (hasPending) 4000 else 8000)
             }
         }
     }
@@ -152,6 +152,14 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
                                 accept(received)
                                 saved = true
                                 input = ""
+                                // Announce paired phone to PC relay so PC marks phone as paired and clears QR
+                                withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        val deviceName = android.os.Build.MODEL ?: "Android"
+                                        val pairDecision = RelayClient.prepareDevicePairDecision(invite.relay, deviceName)
+                                        RelayClient.sendPreparedDecision(invite.relay, pairDecision)
+                                    }
+                                }
                                 return@withLock
                             } catch (ex: DesktopRejected) {
                                 throw ex
@@ -205,7 +213,9 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
             } else accept(received)
         } catch (ex: CancellationException) { throw ex }
         catch (_: DesktopRejected) { reject() }
-        catch (_: Exception) { status = LinkStatus.OFFLINE }
+        catch (_: Exception) {
+            if (snapshot == null) status = LinkStatus.OFFLINE
+        }
         finally { refreshing = false }
     }
 
@@ -338,8 +348,12 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
                         "resume" -> "Oturum devam ettirildi"
                         else -> "İşlem iletildi"
                     }
-                    withContext(Dispatchers.IO) { delay(1500) }
-                    val received = withContext(Dispatchers.IO) { fetchSnapshot(active, remote) }
+                    withContext(Dispatchers.IO) { delay(1200) }
+                    var received = withContext(Dispatchers.IO) { runCatching { fetchSnapshot(active, remote) }.getOrNull() }
+                    if (received == null || (command == "lock" && !received.isRemotelyLocked)) {
+                        withContext(Dispatchers.IO) { delay(1800) }
+                        received = withContext(Dispatchers.IO) { runCatching { fetchSnapshot(active, remote) }.getOrNull() }
+                    }
                     if (received != null) accept(received)
                 } catch (ex: CancellationException) { throw ex }
                 catch (ex: Exception) { remoteActionMessage = "İşlem iletilemedi: ${ex.message}" }
