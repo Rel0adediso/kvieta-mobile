@@ -14,20 +14,20 @@ Windows için Kvieta uygulamasının sakin, yerel öncelikli Android eşlikçisi
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.2-87946B?style=flat-square&labelColor=292B26)
 ![Compose](https://img.shields.io/badge/UI-Jetpack_Compose-C9B98E?style=flat-square&labelColor=292B26)
 ![Gizlilik](https://img.shields.io/badge/gizlilik-yerel--öncelikli-87946B?style=flat-square&labelColor=292B26)
-![Durum](https://img.shields.io/badge/durum-Alpha_1.1-C9B98E?style=flat-square&labelColor=292B26)
+![Durum](https://img.shields.io/badge/durum-Alpha_1.3-C9B98E?style=flat-square&labelColor=292B26)
 ![Lisans](https://img.shields.io/badge/lisans-MIT-87946B?style=flat-square&labelColor=292B26)
 
 </div>
 
 Kvieta Mobil, [Windows için Kvieta](https://github.com/Rel0adediso/Kvieta-app) uygulamasının yerel Android eşlikçisidir. Ekran süresi farkındalığını, uzaktan oturum yönetimini ve ek süre onaylarını verilerinizi kendi cihazlarınızda tutarak doğrudan cebinize taşır. Bulut hesabı gerekmez.
 
-## Kvieta Mobil Alpha 1.1 İndir
+## Kvieta Mobil Alpha 1.3 İndir
 
-[**Android için Kvieta Mobil APK İndir**](https://github.com/Rel0adediso/kvieta-mobile/releases/download/alpha-1.1/kvieta-mobile-alpha-1.1.apk)
+[**Android için Kvieta Mobil APK İndir**](https://github.com/Rel0adediso/kvieta-mobile/releases/download/alpha-1.3/app-release.apk)
 
 Android 8.0 (API 26) ve üzeri sürümlerle uyumludur. Jetpack Compose ve Material 3 ile Kvieta'nın zeytin yeşili ve sıcak taş renk paletine tam sadık kalınarak geliştirilmiştir.
 
-Sürüm notları, sağlama toplamları ve dosyalar [Kvieta Mobil Alpha 1.1 sürüm sayfasındadır](https://github.com/Rel0adediso/kvieta-mobile/releases/tag/alpha-1.1).
+Sürüm notları, sağlama toplamları ve dosyalar [Kvieta Mobil Alpha 1.3 sürüm sayfasındadır](https://github.com/Rel0adediso/kvieta-mobile/releases/tag/alpha-1.3).
 
 > **Önemli:** Kvieta Mobil isteğe bağlı bir destekçi uygulamadır. Tüm temel ekran süresi limitleri, programlar ve uygulama kuralları Windows bilgisayarınız üzerinde çalışır.
 
@@ -58,8 +58,12 @@ Sürüm notları, sağlama toplamları ve dosyalar [Kvieta Mobil Alpha 1.1 sür�
 3. Kameranızı ekrandaki koda tutarak yerel Wi-Fi veya şifreli röle üzerinden saniyeler içinde bağlanın.
 4. Telefonunuz artık eşleşmiştir. Erişimi dilediğiniz an Windows bilgisayarınızdan kaldırabilirsiniz.
 
-## Alpha 1.1 ile Gelen Yenilikler
+## Alpha 1.3 ile Gelen Yenilikler
 
+- **Anlık Push Bildirimleri**: Firebase Cloud Messaging (FCM) ve Cloudflare Relay ile cihaz kilitliyken bile anlık (alt-saniye) ek süre bildirimleri.
+- **Bildirim Çekmecesinden Hızlı Onay**: Uygulamayı açmaya gerek kalmadan doğrudan bildirim üzerinden tek dokunuşla süre onaylama veya reddetme.
+- **Uygulama İçi Otomatik Güncelleme**: GitHub Releases API ile sıfır maliyetli yeni sürüm denetimi ve tek tıkla APK indirme.
+- **Kriptografik İmzalı APK**: RSA-4096 anahtarı ve modern V1, V2, V3, V4 imzalama şemalarıyla korunan dağıtım paketleri.
 - **Biyometrik veya PIN Doğrulaması**: Ek süre onaylarında parmak izi veya PC PIN'i seçeneği.
 - **Kvieta Temalı PIN Diyaloğu**: Yumuşak animasyonlara ve duyarlı hata yönetimine sahip özel PIN arayüzü.
 - **Hızlı QR Kod Tarayıcısı**: Fener desteği ve manuel kod girişi yedeği sunan kamera tarayıcısı.

@@ -14,20 +14,20 @@ A calm, local-first Android companion for Kvieta on Windows.
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.2-87946B?style=flat-square&labelColor=292B26)
 ![Compose](https://img.shields.io/badge/UI-Jetpack_Compose-C9B98E?style=flat-square&labelColor=292B26)
 ![Privacy](https://img.shields.io/badge/privacy-local--first-87946B?style=flat-square&labelColor=292B26)
-![Status](https://img.shields.io/badge/status-Alpha_1.1-C9B98E?style=flat-square&labelColor=292B26)
+![Status](https://img.shields.io/badge/status-Alpha_1.3-C9B98E?style=flat-square&labelColor=292B26)
 ![License](https://img.shields.io/badge/license-MIT-87946B?style=flat-square&labelColor=292B26)
 
 </div>
 
 Kvieta Mobil is the native Android companion for [Kvieta for Windows](https://github.com/Rel0adediso/Kvieta-app). It brings screen-time awareness, remote session management, and extra-time approvals directly to your pocket while keeping your data and policies on your own devices. No cloud account required.
 
-## Download Kvieta Mobil Alpha 1.1
+## Download Kvieta Mobil Alpha 1.3
 
-[**Download Kvieta Mobil APK for Android**](https://github.com/Rel0adediso/kvieta-mobile/releases/download/alpha-1.1/kvieta-mobile-alpha-1.1.apk)
+[**Download Kvieta Mobil APK for Android**](https://github.com/Rel0adediso/kvieta-mobile/releases/download/alpha-1.3/app-release.apk)
 
 Compatible with Android 8.0 (API 26) and newer. Built with Jetpack Compose and Material 3, adhering faithfully to Kvieta's olive-green and warm stone visual language.
 
-The release notes, APK checksums, and assets are available on the [Kvieta Mobil Alpha 1.1 release page](https://github.com/Rel0adediso/kvieta-mobile/releases/tag/alpha-1.1).
+The release notes, APK checksums, and assets are available on the [Kvieta Mobil Alpha 1.3 release page](https://github.com/Rel0adediso/kvieta-mobile/releases/tag/alpha-1.3).
 
 > **Important:** Kvieta Mobil is an optional companion. All core screen time limits, schedules, and application rules run securely on the Windows PC.
 
@@ -58,8 +58,12 @@ The release notes, APK checksums, and assets are available on the [Kvieta Mobil 
 3. Point your camera at the screen to establish a verified connection over Wi-Fi or secure encrypted relay.
 4. Your phone is now paired. You can revoke access at any time from your PC.
 
-## New in Kvieta Mobil Alpha 1.1
-
+## New in Kvieta Mobil Alpha 1.3
+ 
+- **Instant Push Notifications**: Sub-second push delivery for extra-time requests and session updates via Firebase Cloud Messaging (FCM) and Cloudflare Relay even when the screen is locked.
+- **Direct Notification Actions**: Approve or decline extra-time requests directly from the Android notification shade.
+- **In-App Update Checker**: Automated zero-cost GitHub Releases update checks with direct APK download prompts.
+- **Cryptographic Release Signing**: Production APK packaging signed with RSA-4096 (V1, V2, V3, and V4 signing schemes).
 - **Biometric or PIN Verification**: Approve extra-time requests using your phone's fingerprint sensor or your PC PIN.
 - **Kvieta-Themed PIN Dialog**: Calm, custom PIN entry dialog with responsive error handling and smooth transitions.
 - **Fast QR Code Scanner**: Instant camera scanning with flashlight support and fallback manual code entry.
@@ -72,7 +76,7 @@ Kvieta Mobil connects directly to your Windows computer over the local network o
 
 ## Project status
 
-**Kvieta Mobil Alpha 1.1 is the current companion preview.**
+**Kvieta Mobil Alpha 1.3 is the current companion preview.**
 
 - Native Android source built with modern Kotlin and Jetpack Compose.
 - Automated unit tests, TLS pinning validation, Keystore cryptography, and UI interaction checks.
