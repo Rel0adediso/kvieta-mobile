@@ -170,8 +170,8 @@ object RelayClient {
             val bytes = JSONObject().put("token", fcmToken).toString().toByteArray(Charsets.UTF_8)
             connection.setFixedLengthStreamingMode(bytes.size)
             connection.outputStream.use { it.write(bytes) }
-            val _ = connection.responseCode
-        } catch (_: Exception) {
+            connection.responseCode
+        } catch (e: Exception) {
         } finally { connection.disconnect() }
     }
 

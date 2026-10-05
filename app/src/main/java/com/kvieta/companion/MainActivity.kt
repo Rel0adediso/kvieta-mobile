@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.Manifest
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.NotificationManagerCompat
+import kotlinx.coroutines.launch
 
 class MainActivity : KvietaActivity() {
     private lateinit var connection: ConnectionModel
