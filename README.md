@@ -116,7 +116,7 @@ Kvieta Mobil acts as an authorized companion to Kvieta for Windows. Approvals ar
 
 ## Development approach
 
-**Human-directed product · AI-assisted development.** Product direction, UX decisions, and testing are led by [Rel0adediso](https://github.com/Rel0adediso). Architecture, implementation, and test development are carried out collaboratively with OpenAI Codex.
+**Human-directed product · AI-assisted development.** Product direction, UX decisions, and testing are led by [Rel0adediso](https://github.com/Rel0adediso). Architecture, implementation, and test development are carried out with AI assistance.
 
 Kvieta Mobil is open-source software released under the [MIT License](LICENSE).
 

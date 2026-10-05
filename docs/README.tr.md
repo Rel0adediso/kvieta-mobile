@@ -90,7 +90,7 @@ Kvieta Mobil, Windows için Kvieta uygulamasına yetkilendirilmiş bir eşlikçi
 
 ## Geliştirme Yaklaşımı
 
-**İnsan yönetiminde ürün · Yapay zekâ destekli geliştirme.** Ürün yönü, kullanıcı deneyimi kararları ve uygulamalı testler [Rel0adediso](https://github.com/Rel0adediso) tarafından yürütülür. Mimari, uygulama ve test geliştirme OpenAI Codex ile birlikte yapılır.
+**İnsan yönetiminde ürün · Yapay zekâ destekli geliştirme.** Ürün yönü, kullanıcı deneyimi kararları ve uygulamalı testler [Rel0adediso](https://github.com/Rel0adediso) tarafından yürütülür. Mimari, uygulama ve test geliştirme yapay zekâ desteğiyle yürütülür.
 
 Kvieta Mobil, [MIT Lisansı](LICENSE) altında açık kaynaklı bir yazılımdır.
 
