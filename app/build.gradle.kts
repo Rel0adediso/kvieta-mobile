@@ -14,10 +14,33 @@ android {
         versionCode = 9
         versionName = "1.0.0-alpha1.1"
     }
+    signingConfigs {
+        create("release") {
+            val keystoreFile = rootProject.file("kvieta-release.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = project.findProperty("KVIETA_KEYSTORE_PASSWORD") as String? ?: "kvieta2026"
+                keyAlias = project.findProperty("KVIETA_KEY_ALIAS") as String? ?: "kvieta"
+                keyPassword = project.findProperty("KVIETA_KEY_PASSWORD") as String? ?: "kvieta2026"
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
+        }
+        release {
+            isMinifyEnabled = false
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile != null) {
+                signingConfig = releaseSigning
+            }
         }
     }
     buildFeatures { compose = true }

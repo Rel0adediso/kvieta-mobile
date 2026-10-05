@@ -1,0 +1,55 @@
+name: Build and Sign Release APK
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*', 'alpha-*' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Release Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KVIETA_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > kvieta-release.jks
+          else
+            keytool -genkeypair -v \
+              -keystore kvieta-release.jks \
+              -alias kvieta \
+              -keyalg RSA \
+              -keysize 4096 \
+              -validity 10000 \
+              -storepass kvieta2026 \
+              -keypass kvieta2026 \
+              -dname "CN=Kvieta, OU=Mobile, O=Kvieta Open Source, L=Istanbul, C=TR"
+          fi
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Upload Release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kvieta-mobile-release-apk
+          path: app/build/outputs/apk/release/*.apk
