@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "884126961644",
+    "project_id": "kvieta-app",
+    "storage_bucket": "kvieta-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:884126961644:android:481ca49dee00e5e3123ac9",
+        "android_client_info": {
+          "package_name": "com.kvieta.companion"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYfdSYPwCr6RalqzqYet4aVeNtcS-Bj6w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

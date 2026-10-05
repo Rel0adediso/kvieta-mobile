@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -11,8 +12,8 @@ android {
         applicationId = "com.kvieta.companion"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.0.0-alpha1.2"
+        versionCode = 11
+        versionName = "1.0.0-alpha1.3"
     }
     signingConfigs {
         create("release") {
@@ -58,6 +59,8 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.10.3")
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
+    implementation("com.google.firebase:firebase-messaging")
     implementation(platform("androidx.compose:compose-bom:2025.08.01"))
     implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.compose.material3:material3")

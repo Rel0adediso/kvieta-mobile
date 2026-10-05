@@ -22,8 +22,25 @@ class MainActivity : KvietaActivity() {
         enableEdgeToEdge()
         connection = ViewModelProvider(this)[ConnectionModel::class.java]
         if (savedInstanceState == null) intent?.dataString?.let(connection::connectInvite)
+        syncFcmToken()
         setContent { KvietaTheme { CompanionApp(connection, onScanQr = ::launchQrScanner, onEnableNotifications = ::enableNotifications,
             notificationsEnabled = notificationsEnabled.value) } }
+    }
+
+    private fun syncFcmToken() {
+        runCatching {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (task.isSuccessful && task.result != null) {
+                    val token = task.result
+                    getSharedPreferences("kvieta-fcm", MODE_PRIVATE).edit().putString("fcm_token", token).apply()
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                        val identity = com.kvieta.companion.connection.DeviceIdentity(applicationContext)
+                        val remote = runCatching { identity.remote() }.getOrNull() ?: return@launch
+                        com.kvieta.companion.connection.RelayClient.registerFcmToken(remote, token)
+                    }
+                }
+            }
+        }
     }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

@@ -160,6 +160,21 @@ object RelayClient {
         } finally { connection.disconnect() }
     }
 
+    fun registerFcmToken(settings: RelaySettings, fcmToken: String) {
+        val connection = URL(settings.origin + "/v1/rooms/" + settings.room + "/fcm").openConnection() as HttpsURLConnection
+        try {
+            connection.connectTimeout = 8000; connection.readTimeout = 8000; connection.instanceFollowRedirects = false
+            connection.requestMethod = "POST"; connection.doOutput = true
+            connection.setRequestProperty("Authorization", "Bearer " + settings.readToken)
+            connection.setRequestProperty("Content-Type", "application/json")
+            val bytes = JSONObject().put("token", fcmToken).toString().toByteArray(Charsets.UTF_8)
+            connection.setFixedLengthStreamingMode(bytes.size)
+            connection.outputStream.use { it.write(bytes) }
+            val _ = connection.responseCode
+        } catch (_: Exception) {
+        } finally { connection.disconnect() }
+    }
+
     private fun encryptDecision(settings: RelaySettings, plain: ByteArray): String {
         val keyBytes = Base64.getDecoder().decode(settings.key)
         try {

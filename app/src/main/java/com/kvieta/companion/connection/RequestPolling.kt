@@ -23,41 +23,39 @@ object RequestPolling {
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.KEEP, work)
     }
     fun cancel(context: Context) = WorkManager.getInstance(context).cancelUniqueWork(NAME)
-}
 
-class RequestPollingWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val identity = DeviceIdentity(applicationContext)
-        val remote = runCatching { identity.remote() }.getOrNull() ?: return@withContext Result.success()
+    suspend fun fetchAndNotify(context: Context, isStopped: Boolean = false): Boolean = withContext(Dispatchers.IO) {
+        val identity = DeviceIdentity(context)
+        val remote = runCatching { identity.remote() }.getOrNull() ?: return@withContext true
         val snapshot = runCatching { RelayClient.snapshot(remote, identity.remoteSequence(), identity::acceptRemoteSequence) }
             .getOrElse {
                 if (it is CancellationException) throw it
                 if (it is DesktopRejected) {
-                    if (isStopped || identity.remote()?.room != remote.room) return@withContext Result.success()
+                    if (isStopped || identity.remote()?.room != remote.room) return@withContext true
                     identity.saveRemote(null); identity.cache(null); identity.saveDecision(null)
-                    applicationContext.getSystemService(NotificationManager::class.java).cancelAll()
-                    return@withContext Result.success()
+                    context.getSystemService(NotificationManager::class.java).cancelAll()
+                    return@withContext true
                 }
-                return@withContext Result.retry()
+                return@withContext false
             }
-        if (isStopped || identity.remote()?.room != remote.room) return@withContext Result.success()
+        if (isStopped || identity.remote()?.room != remote.room) return@withContext true
         val request = snapshot.timeRequest
         if (snapshot.mode != "Family" || request == null || !request.isPending()) {
-            applicationContext.getSystemService(NotificationManager::class.java).cancelAll()
-            return@withContext Result.success()
+            context.getSystemService(NotificationManager::class.java).cancelAll()
+            return@withContext true
         }
-        if (identity.pendingDecision()?.requestId == request.id || !androidx.core.app.NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) return@withContext Result.success()
-        val preferences = applicationContext.getSharedPreferences("request-notifications", Context.MODE_PRIVATE)
-        if (preferences.getString("last", null) == request.id) return@withContext Result.success()
-        val manager = applicationContext.getSystemService(NotificationManager::class.java)
+        if (identity.pendingDecision()?.requestId == request.id || !androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()) return@withContext true
+        val preferences = context.getSharedPreferences("request-notifications", Context.MODE_PRIVATE)
+        if (preferences.getString("last", null) == request.id) return@withContext true
+        val manager = context.getSystemService(NotificationManager::class.java)
         val channel = "time-requests"
         if (Build.VERSION.SDK_INT >= 26) manager.createNotificationChannel(NotificationChannel(channel,
-            applicationContext.getString(R.string.request_notification_channel), NotificationManager.IMPORTANCE_HIGH))
-        val intent = PendingIntent.getActivity(applicationContext, 0, Intent(applicationContext, MainActivity::class.java),
+            context.getString(R.string.request_notification_channel), NotificationManager.IMPORTANCE_HIGH))
+        val intent = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         fun createActionPendingIntent(approve: Boolean, minutes: Int?): PendingIntent {
-            val actionIntent = Intent(applicationContext, DecisionActionReceiver::class.java).apply {
+            val actionIntent = Intent(context, DecisionActionReceiver::class.java).apply {
                 action = DecisionActionReceiver.ACTION_DECISION
                 putExtra(DecisionActionReceiver.EXTRA_REQUEST_ID, request.id)
                 putExtra(DecisionActionReceiver.EXTRA_APPROVE, approve)
@@ -65,21 +63,28 @@ class RequestPollingWorker(context: Context, parameters: WorkerParameters) : Cor
             }
             val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             val reqCode = if (approve) (request.id.hashCode() * 31 + (minutes ?: 0)) else (request.id.hashCode() * 31 + 999)
-            return PendingIntent.getBroadcast(applicationContext, reqCode, actionIntent, flags)
+            return PendingIntent.getBroadcast(context, reqCode, actionIntent, flags)
         }
 
-        val notification = NotificationCompat.Builder(applicationContext, channel).setSmallIcon(R.drawable.ic_kvieta)
-            .setContentTitle(applicationContext.getString(R.string.request_notification_title))
-            .setContentText(applicationContext.getString(R.string.request_notification_body, request.requestedMinutes))
+        val notification = NotificationCompat.Builder(context, channel).setSmallIcon(R.drawable.ic_kvieta)
+            .setContentTitle(context.getString(R.string.request_notification_title))
+            .setContentText(context.getString(R.string.request_notification_body, request.requestedMinutes))
             .setContentIntent(intent).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH)
             .addAction(0, "+15 dk", createActionPendingIntent(true, 15))
             .addAction(0, "+30 dk", createActionPendingIntent(true, 30))
-            .addAction(0, applicationContext.getString(R.string.request_reject), createActionPendingIntent(false, null))
+            .addAction(0, context.getString(R.string.request_reject), createActionPendingIntent(false, null))
             .build()
-        if (Build.VERSION.SDK_INT >= 33 && androidx.core.content.ContextCompat.checkSelfPermission(applicationContext,
-            android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return@withContext Result.success()
+        if (Build.VERSION.SDK_INT >= 33 && androidx.core.content.ContextCompat.checkSelfPermission(context,
+            android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return@withContext true
         manager.notify(request.id.hashCode(), notification)
         preferences.edit().putString("last", request.id).apply()
-        Result.success()
+        true
+    }
+}
+
+class RequestPollingWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
+    override suspend fun doWork(): Result {
+        val success = RequestPolling.fetchAndNotify(applicationContext, isStopped)
+        return if (success) Result.success() else Result.retry()
     }
 }
