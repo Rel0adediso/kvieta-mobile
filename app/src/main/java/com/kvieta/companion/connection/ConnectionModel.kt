@@ -53,6 +53,12 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
     var ruleSaving by mutableStateOf(false); private set
     var webGuardSaving by mutableStateOf(false); private set
     var webGuardMessage by mutableStateOf<String?>(null); private set
+    var biometricAuthEnabled by mutableStateOf(identity.isBiometricEnabled()); private set
+
+    fun updateBiometricAuth(enabled: Boolean) {
+        identity.setBiometricEnabled(enabled)
+        biometricAuthEnabled = enabled
+    }
 
     init {
         viewModelScope.launch {

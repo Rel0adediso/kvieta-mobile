@@ -49,6 +49,17 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
     var settings by rememberSaveable { mutableStateOf(false) }
     var confirmForget by remember { mutableStateOf(false) }
     var now by remember { mutableStateOf(Instant.now()) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val activity = context as? android.app.Activity
+    val authTitleAction = stringResource(R.string.biometric_prompt_remote_action)
+    val authTitleTime = stringResource(R.string.biometric_prompt_grant_time)
+    val authTitleRule = stringResource(R.string.biometric_prompt_save_rule)
+    val authTitleWebGuard = stringResource(R.string.biometric_prompt_web_guard)
+    val authSubtitle = stringResource(R.string.biometric_prompt_subtitle)
+    val usePinText = stringResource(R.string.use_pin_instead)
+    val cancelText = stringResource(R.string.pin_cancel)
+    var pendingAuthAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var showPinDialog by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { while (true) { delay(15000); now = Instant.now() } }
     BackHandler(settings) { settings = false }
     val busy = model.refreshing || model.decisionStatus == DecisionStatus.SENDING
@@ -97,62 +108,61 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
                     modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.qr_reconnect)) }
             }
         }
-        val context = androidx.compose.ui.platform.LocalContext.current
-        val activity = context as? android.app.Activity
-        val authTitleAction = stringResource(R.string.biometric_prompt_remote_action)
-        val authTitleTime = stringResource(R.string.biometric_prompt_grant_time)
-        val authTitleRule = stringResource(R.string.biometric_prompt_save_rule)
-        val authSubtitle = stringResource(R.string.biometric_prompt_subtitle)
+        val requestAuthentication: (String, () -> Unit) -> Unit = { title, action ->
+            val hasAdminPin = model.snapshot?.hasAdminPin == true
+            val canUseBiometric = model.biometricAuthEnabled && activity != null &&
+                com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)
+
+            if (canUseBiometric) {
+                com.kvieta.companion.security.BiometricHelper.authenticate(
+                    activity = activity!!,
+                    title = title,
+                    subtitle = authSubtitle,
+                    negativeButtonText = if (hasAdminPin) usePinText else cancelText,
+                    onSuccess = action,
+                    onUsePin = {
+                        if (hasAdminPin) {
+                            pendingAuthAction = action
+                            showPinDialog = true
+                        } else {
+                            action()
+                        }
+                    },
+                    onCancel = {}
+                )
+            } else if (hasAdminPin) {
+                pendingAuthAction = action
+                showPinDialog = true
+            } else {
+                action()
+            }
+        }
 
         val safeSessionAction: (String) -> Unit = { cmd ->
-            if (activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)) {
-                com.kvieta.companion.security.BiometricHelper.authenticate(
-                    activity = activity,
-                    title = authTitleAction,
-                    subtitle = authSubtitle,
-                    onSuccess = { model.submitSessionAction(cmd) }
-                )
-            } else {
+            requestAuthentication(authTitleAction) {
                 model.submitSessionAction(cmd)
             }
         }
 
         val safeDecision: (TimeRequest, Boolean, Int?) -> Unit = { req, approve, minutes ->
-            if (activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)) {
-                com.kvieta.companion.security.BiometricHelper.authenticate(
-                    activity = activity,
-                    title = authTitleTime,
-                    subtitle = authSubtitle,
-                    onSuccess = { model.decide(req, approve, minutes) }
-                )
+            if (approve) {
+                requestAuthentication(authTitleTime) {
+                    model.decide(req, true, minutes)
+                }
             } else {
-                model.decide(req, approve, minutes)
+                model.decide(req, false, minutes)
             }
         }
 
         val safeAppRuleSave: (String, String, Int) -> Unit = { name, modeStr, limit ->
-            if (activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)) {
-                com.kvieta.companion.security.BiometricHelper.authenticate(
-                    activity = activity,
-                    title = authTitleRule,
-                    subtitle = authSubtitle,
-                    onSuccess = { model.submitAppRule(name, modeStr, limit) }
-                )
-            } else {
+            requestAuthentication(authTitleRule) {
                 model.submitAppRule(name, modeStr, limit)
             }
         }
 
         val authTitleWebGuard = stringResource(R.string.biometric_prompt_web_guard)
         val safeWebGuardChange: (Boolean?, Boolean?, List<String>?, String?, String?) -> Unit = { enabled, safeSearch, domains, act, dom ->
-            if (activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity)) {
-                com.kvieta.companion.security.BiometricHelper.authenticate(
-                    activity = activity,
-                    title = authTitleWebGuard,
-                    subtitle = authSubtitle,
-                    onSuccess = { model.submitWebGuard(enabled, safeSearch, domains, act, dom) }
-                )
-            } else {
+            requestAuthentication(authTitleWebGuard) {
                 model.submitWebGuard(enabled, safeSearch, domains, act, dom)
             }
         }
@@ -212,6 +222,25 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
                     }
                 }
                 HorizontalDivider()
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                        Text(stringResource(R.string.use_biometric_auth), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            stringResource(R.string.use_biometric_auth_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = model.biometricAuthEnabled,
+                        onCheckedChange = { model.updateBiometricAuth(it) }
+                    )
+                }
+                HorizontalDivider()
                 onScanQr?.let { scan ->
                     TextButton(onClick = { settings = false; scan() }, enabled = model.decisionStatus != DecisionStatus.SENDING) {
                         Text(stringResource(R.string.qr_reconnect))
@@ -232,6 +261,49 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
         text = { Text(stringResource(R.string.qr_replace_body)) },
         confirmButton = { TextButton(onClick = model::confirmReplacement) { Text(stringResource(R.string.link_connect)) } },
         dismissButton = { TextButton(onClick = model::cancelReplacement) { Text(stringResource(R.string.link_cancel)) } })
+    if (showPinDialog) {
+        KvietaPinDialog(
+            onDismiss = {
+                showPinDialog = false
+                pendingAuthAction = null
+            },
+            onVerifyPin = { enteredPin ->
+                val salt = model.snapshot?.adminPinSalt
+                val hash = model.snapshot?.adminPinHash
+                val iterations = model.snapshot?.adminPinIterations ?: 0
+                val valid = com.kvieta.companion.security.PinVerifier.verify(enteredPin, salt, hash, iterations)
+                if (valid) {
+                    showPinDialog = false
+                    val act: (() -> Unit)? = pendingAuthAction
+                    pendingAuthAction = null
+                    act?.invoke()
+                    true
+                } else {
+                    false
+                }
+            },
+            canUseBiometric = activity != null && com.kvieta.companion.security.BiometricHelper.isDeviceSecure(activity) && model.biometricAuthEnabled,
+            onUseBiometric = {
+                showPinDialog = false
+                val act: (() -> Unit)? = pendingAuthAction
+                if (act != null && activity != null) {
+                    com.kvieta.companion.security.BiometricHelper.authenticate(
+                        activity = activity,
+                        title = authTitleTime,
+                        subtitle = authSubtitle,
+                        negativeButtonText = usePinText,
+                        onSuccess = {
+                            pendingAuthAction = null
+                            act()
+                        },
+                        onUsePin = {
+                            showPinDialog = true
+                        }
+                    )
+                }
+            }
+        )
+    }
 }
 
 @Composable

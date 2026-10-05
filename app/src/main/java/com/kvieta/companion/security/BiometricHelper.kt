@@ -20,13 +20,14 @@ object BiometricHelper {
         activity: Activity,
         title: String,
         subtitle: String = "",
-        negativeButtonText: String = "İptal",
+        negativeButtonText: String = "PIN ile Onayla",
         onSuccess: () -> Unit,
+        onUsePin: () -> Unit = {},
         onCancel: () -> Unit = {}
     ) {
         if (!isDeviceSecure(activity)) {
-            // No device security configured (simulator or unconfigured lock) -> allow directly
-            onSuccess()
+            // No device biometric security configured -> fall back to PIN verification
+            onUsePin()
             return
         }
 
@@ -40,20 +41,38 @@ object BiometricHelper {
                 builder.setSubtitle(subtitle)
             }
 
+            var handled = false
             builder.setNegativeButton(negativeButtonText, executor) { _: DialogInterface, _: Int ->
-                onCancel()
+                if (!handled) {
+                    handled = true
+                    onUsePin()
+                }
             }
 
             val prompt = builder.build()
             prompt.authenticate(cancellationSignal, executor, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
                     super.onAuthenticationSucceeded(result)
-                    onSuccess()
+                    if (!handled) {
+                        handled = true
+                        onSuccess()
+                    }
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
                     super.onAuthenticationError(errorCode, errString)
-                    onCancel()
+                    if (handled) return
+                    handled = true
+                    val errorNegativeButton = 13 // BiometricPrompt.BIOMETRIC_ERROR_NEGATIVE_BUTTON
+                    if (errorCode == errorNegativeButton) {
+                        onUsePin()
+                    } else if (errorCode == BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED ||
+                        errorCode == BiometricPrompt.BIOMETRIC_ERROR_CANCELED) {
+                        onCancel()
+                    } else {
+                        // Other errors (e.g. lockout, hardware error) -> fall back to PIN
+                        onUsePin()
+                    }
                 }
 
                 override fun onAuthenticationFailed() {
@@ -61,7 +80,7 @@ object BiometricHelper {
                 }
             })
         } else {
-            onSuccess()
+            onUsePin()
         }
     }
 }

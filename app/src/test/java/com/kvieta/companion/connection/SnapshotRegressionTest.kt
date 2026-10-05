@@ -36,6 +36,10 @@ class SnapshotRegressionTest {
         assertEquals(value.isRemotelyLocked, restored.isRemotelyLocked)
         assertEquals(value.hourlyUsage, restored.hourlyUsage)
         assertEquals(value.appRules, restored.appRules)
+        assertEquals(value.hasAdminPin, restored.hasAdminPin)
+        assertEquals(value.adminPinSalt, restored.adminPinSalt)
+        assertEquals(value.adminPinHash, restored.adminPinHash)
+        assertEquals(value.adminPinIterations, restored.adminPinIterations)
     }
     @Test fun expiryAndFreshnessFailClosed() {
         val value = DesktopClient.parseSnapshot(json())

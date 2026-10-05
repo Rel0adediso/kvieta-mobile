@@ -39,6 +39,10 @@ data class DesktopSnapshot(
     val webGuardEnabled: Boolean = false,
     val safeSearchEnforced: Boolean = false,
     val blockedWebDomains: List<String> = emptyList(),
+    val hasAdminPin: Boolean = false,
+    val adminPinSalt: String? = null,
+    val adminPinHash: String? = null,
+    val adminPinIterations: Int = 0,
 )
 
 fun TimeRequest.isPending(now: java.time.Instant = java.time.Instant.now()): Boolean =
@@ -128,7 +132,11 @@ class DesktopClient(private val identity: SigningIdentity, private val deviceNam
             safeSearchEnforced = data.optBoolean("safeSearchEnforced", false),
             blockedWebDomains = data.optJSONArray("blockedWebDomains")?.let { values ->
                 List(values.length()) { index -> values.getString(index) }
-            } ?: emptyList())
+            } ?: emptyList(),
+            hasAdminPin = data.optBoolean("hasAdminPin", false),
+            adminPinSalt = data.optionalText("adminPinSalt"),
+            adminPinHash = data.optionalText("adminPinHash"),
+            adminPinIterations = data.optInt("adminPinIterations", 0))
     }
     }
 

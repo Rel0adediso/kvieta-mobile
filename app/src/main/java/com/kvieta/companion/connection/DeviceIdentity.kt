@@ -30,6 +30,8 @@ interface CompanionIdentity : SigningIdentity {
     fun cached(): DesktopSnapshot?
     fun pendingDecision(): PendingDecision?
     fun saveDecision(value: PendingDecision?)
+    fun isBiometricEnabled(): Boolean = true
+    fun setBiometricEnabled(enabled: Boolean) {}
 }
 
 class DeviceIdentity(private val context: Context) : CompanionIdentity {
@@ -38,6 +40,11 @@ class DeviceIdentity(private val context: Context) : CompanionIdentity {
     private val alias = "kvieta-dashboard-device-v1"
     private val relayAlias = "kvieta-dashboard-relay-wrap-v1"
     private fun store() = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+
+    override fun isBiometricEnabled(): Boolean = preferences.getBoolean("biometricEnabled", true)
+    override fun setBiometricEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean("biometricEnabled", enabled).apply()
+    }
 
     override fun ensure() {
         if (!store().containsAlias(alias)) {

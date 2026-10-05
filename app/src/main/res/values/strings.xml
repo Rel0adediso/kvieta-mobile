@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Kvieta Companion</string>
+    <string name="app_name">Kvieta Mobile</string>
     <string name="preview_label">PREVIEW</string>
     <string name="welcome_title">Your time.\nWithin reach.</string>
     <string name="welcome_body">See your computer’s day, without bringing all its settings to your phone.</string>
@@ -116,4 +116,14 @@
     <string name="web_guard_empty">No blocked websites added yet.</string>
     <string name="web_guard_saving">Saving web guard…</string>
     <string name="biometric_prompt_web_guard">Confirm Web Guard</string>
+    <string name="use_biometric_auth">Biometric Confirmation</string>
+    <string name="use_biometric_auth_desc">Use fingerprint or face recognition instead of computer PIN</string>
+    <string name="use_pin_instead">Use PIN</string>
+    <string name="pin_dialog_title">Enter Computer PIN</string>
+    <string name="pin_dialog_hint">Enter the Admin PIN configured on your computer to confirm this action.</string>
+    <string name="pin_input_label">PIN</string>
+    <string name="pin_incorrect">Incorrect PIN. Please try again.</string>
+    <string name="pin_confirm_action">Confirm</string>
+    <string name="pin_cancel">Cancel</string>
+    <string name="no_pin_configured">No PIN configured on computer</string>
 </resources>
