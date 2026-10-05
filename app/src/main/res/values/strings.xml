@@ -126,4 +126,7 @@
     <string name="pin_confirm_action">Confirm</string>
     <string name="pin_cancel">Cancel</string>
     <string name="no_pin_configured">No PIN configured on computer</string>
+    <string name="update_available_title">New version available</string>
+    <string name="update_available_body">Kvieta Mobil %1$s is available on GitHub.</string>
+    <string name="update_download_action">Update</string>
 </resources>

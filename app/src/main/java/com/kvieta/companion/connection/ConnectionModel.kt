@@ -54,10 +54,25 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
     var webGuardSaving by mutableStateOf(false); private set
     var webGuardMessage by mutableStateOf<String?>(null); private set
     var biometricAuthEnabled by mutableStateOf(identity.isBiometricEnabled()); private set
+    var updateInfo by mutableStateOf<MobileUpdateInfo?>(null); private set
 
     fun updateBiometricAuth(enabled: Boolean) {
         identity.setBiometricEnabled(enabled)
         biometricAuthEnabled = enabled
+    }
+
+    fun checkForUpdates() {
+        viewModelScope.launch {
+            val app = getApplication<Application>()
+            val curVer = try {
+                app.packageManager.getPackageInfo(app.packageName, 0).versionName ?: "1.1"
+            } catch (_: Exception) {
+                "1.1"
+            }
+            updateInfo = withContext(Dispatchers.IO) {
+                MobileUpdateChecker.checkForUpdate(curVer)
+            }
+        }
     }
 
     init {
@@ -74,6 +89,20 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
             } catch (ex: CancellationException) { throw ex }
             catch (_: Exception) { status = LinkStatus.OFFLINE }
             finally { ready = true; initialized.complete(Unit) }
+        }
+        viewModelScope.launch {
+            try {
+                val app = getApplication<Application>()
+                val curVer = try {
+                    app.packageManager.getPackageInfo(app.packageName, 0).versionName ?: "1.1"
+                } catch (_: Exception) {
+                    "1.1"
+                }
+                val info = withContext(Dispatchers.IO) {
+                    MobileUpdateChecker.checkForUpdate(curVer)
+                }
+                updateInfo = info
+            } catch (_: Exception) { }
         }
     }
 

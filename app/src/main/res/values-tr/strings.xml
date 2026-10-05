@@ -126,4 +126,7 @@
     <string name="pin_confirm_action">Onayla</string>
     <string name="pin_cancel">İptal</string>
     <string name="no_pin_configured">Bilgisayarda PIN tanımlı değil</string>
+    <string name="update_available_title">Yeni sürüm mevcut</string>
+    <string name="update_available_body">Kvieta Mobil %1$s sürümü GitHub\'da yayınlandı.</string>
+    <string name="update_download_action">Güncelle</string>
 </resources>
