@@ -55,11 +55,11 @@ object MobileUpdateChecker {
 
     fun isRemoteNewer(local: String, remote: String): Boolean {
         if (local.equals(remote, ignoreCase = true)) return false
-        val cleanLocal = local.replace(Regex("^(?:kvieta-)?(?:alpha-?|v)?", RegexOption.IGNORE_CASE), "")
-        val cleanRemote = remote.replace(Regex("^(?:kvieta-)?(?:alpha-?|v)?", RegexOption.IGNORE_CASE), "")
-        if (cleanLocal.equals(cleanRemote, ignoreCase = true)) return false
-        val localNum = extractNumbers(cleanLocal)
-        val remoteNum = extractNumbers(cleanRemote)
+        val normLocal = normalizeVersion(local)
+        val normRemote = normalizeVersion(remote)
+        if (normLocal.equals(normRemote, ignoreCase = true)) return false
+        val localNum = extractNumbers(normLocal)
+        val remoteNum = extractNumbers(normRemote)
         for (i in 0 until maxOf(localNum.size, remoteNum.size)) {
             val l = localNum.getOrElse(i) { 0 }
             val r = remoteNum.getOrElse(i) { 0 }
@@ -67,6 +67,16 @@ object MobileUpdateChecker {
             if (r < l) return false
         }
         return false
+    }
+
+    private fun normalizeVersion(v: String): String {
+        var s = v.trim().lowercase()
+        if (s.startsWith("v")) s = s.substring(1)
+        val alphaMatch = Regex("""(?:.*-)?alpha[-.]?([\d.]+)""").find(s)
+        if (alphaMatch != null) {
+            return alphaMatch.groupValues[1]
+        }
+        return s.replace(Regex("""^[^\d]+"""), "")
     }
 
     private fun extractNumbers(s: String): List<Int> {
