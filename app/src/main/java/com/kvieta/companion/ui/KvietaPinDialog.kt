@@ -26,7 +26,7 @@ fun KvietaPinDialog(
     canUseBiometric: Boolean = false,
     onUseBiometric: (() -> Unit)? = null,
 ) {
-    var pin by rememberSaveable { mutableStateOf("") }
+    var pin by remember { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     val invalidFormat = stringResource(R.string.pin_incorrect)
 

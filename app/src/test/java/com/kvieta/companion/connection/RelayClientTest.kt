@@ -6,8 +6,13 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.util.Base64
 import java.time.Instant
+import java.security.KeyPairGenerator
+import java.security.MessageDigest
+import java.security.spec.MGF1ParameterSpec
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.OAEPParameterSpec
+import javax.crypto.spec.PSource
 import javax.crypto.spec.SecretKeySpec
 
 class RelayClientTest {
@@ -57,6 +62,28 @@ class RelayClientTest {
         assertTrue(ruleDecision.payloadJson!!.contains("\"name\":\"Discord\""))
         assertTrue(ruleDecision.payloadJson!!.contains("\"mode\":\"Limited\""))
         assertTrue(ruleDecision.payloadJson!!.contains("\"dailyLimitMinutes\":45"))
+    }
+
+    @Test fun bindsThePinToTheCommandForThePairedGuardian() {
+        val keys = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+        val relay = settings.copy(decisionToken = "d".repeat(64),
+            guardianKey = Base64.getEncoder().encodeToString(keys.public.encoded))
+        val decision = RelayClient.prepareAppRuleDecision(relay, "Örnek", "Limited", 45, "482619")
+        val box = Base64.getDecoder().decode(decision.box)
+        val transport = Cipher.getInstance("AES/GCM/NoPadding")
+        transport.init(Cipher.DECRYPT_MODE, SecretKeySpec(Base64.getDecoder().decode(relay.key), "AES"),
+            GCMParameterSpec(128, box, 0, 12))
+        transport.updateAAD(("kvieta-relay-decision-v1\n" + relay.room).toByteArray())
+        val payload = JSONObject(transport.doFinal(box, 12, box.size - 12).toString(Charsets.UTF_8))
+        val guardian = Cipher.getInstance("RSA/ECB/OAEPPadding")
+        guardian.init(Cipher.DECRYPT_MODE, keys.private,
+            OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT))
+        val plain = guardian.doFinal(Base64.getDecoder().decode(payload.getString("parentProof")))
+        val content = listOf("kvieta-parent-policy-v2", relay.room, decision.sequence.toString(), decision.id,
+            decision.id, "update-app-rule", "", Instant.parse(payload.getString("decidedAtUtc")).toEpochMilli().toString(),
+            Base64.getEncoder().encodeToString(decision.payloadJson!!.toByteArray())).joinToString("\n")
+        assertArrayEquals(MessageDigest.getInstance("SHA-256").digest(content.toByteArray()), plain.copyOfRange(0, 32))
+        assertEquals("482619", plain.copyOfRange(32, plain.size).toString(Charsets.US_ASCII))
     }
     @Test fun decryptsRealDotNetFixtureAndFetchesCloudflare() {
         val path = System.getenv("KVIETA_RELAY_FIXTURE")

@@ -43,7 +43,10 @@ data class DesktopSnapshot(
     val adminPinSalt: String? = null,
     val adminPinHash: String? = null,
     val adminPinIterations: Int = 0,
+    val policyReceipt: PolicyReceipt? = null,
 )
+
+data class PolicyReceipt(val decisionId: String, val state: String)
 
 fun TimeRequest.isPending(now: java.time.Instant = java.time.Instant.now()): Boolean =
     status == "Pending" && runCatching { java.time.Instant.parse(expiresAt).isAfter(now) }.getOrDefault(false)
@@ -136,7 +139,10 @@ class DesktopClient(private val identity: SigningIdentity, private val deviceNam
             hasAdminPin = data.optBoolean("hasAdminPin", false),
             adminPinSalt = data.optionalText("adminPinSalt"),
             adminPinHash = data.optionalText("adminPinHash"),
-            adminPinIterations = data.optInt("adminPinIterations", 0))
+            adminPinIterations = data.optInt("adminPinIterations", 0),
+            policyReceipt = data.optJSONObject("remoteCommand")?.let { receipt ->
+                receipt.optionalText("decisionId")?.let { PolicyReceipt(it, receipt.optString("state")) }
+            })
     }
     }
 

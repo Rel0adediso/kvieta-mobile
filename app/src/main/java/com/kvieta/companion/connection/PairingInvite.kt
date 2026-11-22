@@ -31,11 +31,12 @@ data class PairingInvite(val connection: DesktopConnection, val token: String, v
             val fields = entries.toMap()
             val version = fields.getValue("v")
             if (version == "2") {
-                require(entries.size == 7 && fields.keys == setOf("v","origin","room","readToken","key","decisionToken","expires"))
+                val relayFields = setOf("v","origin","room","readToken","key","decisionToken","expires")
+                require(entries.size == fields.size && (fields.keys == relayFields || fields.keys == relayFields + "guardianKey"))
                 val expires = fields.getValue("expires").toLong()
                 require(expires > now && expires <= now + 900)
                 val relay = RelaySettings(fields.getValue("origin"), fields.getValue("room"),
-                    fields.getValue("readToken"), fields.getValue("key"), fields.getValue("decisionToken"))
+                    fields.getValue("readToken"), fields.getValue("key"), fields.getValue("decisionToken"), fields["guardianKey"])
                 val dummy = DesktopConnection("https://192.168.0.1:24882", "00".repeat(32))
                 return PairingInvite(dummy, "", expires, relay)
             }

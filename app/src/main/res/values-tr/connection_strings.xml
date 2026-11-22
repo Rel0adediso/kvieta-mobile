@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="family_policy_pair_again">Aile kurallarını düzenlemek için yeni bir Kvieta QR kodu okut.</string>
+    <string name="family_policy_rejected">Guardian değişikliği uygulayamadı. PIN’i kontrol edip tekrar dene.</string>
     <string name="link_back">Geri</string>
     <string name="link_computer">Bilgisayarın</string>
     <string name="link_title">Bilgisayar bağla</string>

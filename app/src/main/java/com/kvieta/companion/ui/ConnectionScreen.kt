@@ -60,6 +60,7 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
     val cancelText = stringResource(R.string.pin_cancel)
     var pendingAuthAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showPinDialog by remember { mutableStateOf(false) }
+    var guardianPolicyAction by remember { mutableStateOf<((String) -> Unit)?>(null) }
     LaunchedEffect(Unit) { while (true) { delay(15000); now = Instant.now() } }
     BackHandler(settings) { settings = false }
     val busy = model.refreshing || model.decisionStatus == DecisionStatus.SENDING
@@ -154,15 +155,26 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
             }
         }
 
+        val family = model.snapshot?.mode == "Family"
+        val canEditFamilyPolicy = !family || model.hasGuardianPairing()
+        if (!canEditFamilyPolicy) Text(stringResource(R.string.family_policy_pair_again))
+        if (family && model.familyPolicyRejected) Text(stringResource(R.string.family_policy_rejected))
+
         val safeAppRuleSave: (String, String, Int) -> Unit = { name, modeStr, limit ->
-            requestAuthentication(authTitleRule) {
+            if (family) {
+                if (canEditFamilyPolicy) guardianPolicyAction = { pin -> model.submitAppRule(name, modeStr, limit, pin) }
+            } else requestAuthentication(authTitleRule) {
                 model.submitAppRule(name, modeStr, limit)
             }
         }
 
         val authTitleWebGuard = stringResource(R.string.biometric_prompt_web_guard)
         val safeWebGuardChange: (Boolean?, Boolean?, List<String>?, String?, String?) -> Unit = { enabled, safeSearch, domains, act, dom ->
-            requestAuthentication(authTitleWebGuard) {
+            if (family) {
+                if (canEditFamilyPolicy) guardianPolicyAction = { pin ->
+                    model.submitWebGuard(enabled, safeSearch, domains, act, dom, pin)
+                }
+            } else requestAuthentication(authTitleWebGuard) {
                 model.submitWebGuard(enabled, safeSearch, domains, act, dom)
             }
         }
@@ -171,7 +183,11 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
             refreshing = model.refreshing, now = now, canDecide = model.remoteAvailable,
             decisionStatus = model.decisionStatus, onRefresh = model::refresh,
             onConnection = { settings = true }, onDecision = safeDecision,
-            planSaving = model.planSaving, planSaved = model.planSaved, onPlanSave = model::submitPlan,
+            planSaving = model.planSaving, planSaved = model.planSaved, onPlanSave = { plan ->
+                if (family) {
+                    if (canEditFamilyPolicy) guardianPolicyAction = { pin -> model.submitPlan(plan, pin) }
+                } else model.submitPlan(plan)
+            },
             remoteActionExecuting = model.remoteActionExecuting, remoteActionMessage = model.remoteActionMessage,
             onSessionAction = safeSessionAction, ruleSaving = model.ruleSaving,
             onAppRuleSave = safeAppRuleSave,
@@ -261,6 +277,22 @@ fun ConnectionScreen(model: ConnectionModel, onBack: () -> Unit, onScanQr: (() -
         text = { Text(stringResource(R.string.qr_replace_body)) },
         confirmButton = { TextButton(onClick = model::confirmReplacement) { Text(stringResource(R.string.link_connect)) } },
         dismissButton = { TextButton(onClick = model::cancelReplacement) { Text(stringResource(R.string.link_cancel)) } })
+    guardianPolicyAction?.let { action ->
+        KvietaPinDialog(
+            onDismiss = { guardianPolicyAction = null },
+            onVerifyPin = { pin ->
+                if (!pin.matches(Regex("[0-9]{4,8}"))) false
+                else {
+                    guardianPolicyAction = null
+                    action(pin)
+                    true
+                }
+            },
+            canUseBiometric = false,
+            onUseBiometric = {}
+        )
+    }
+
     if (showPinDialog) {
         KvietaPinDialog(
             onDismiss = {

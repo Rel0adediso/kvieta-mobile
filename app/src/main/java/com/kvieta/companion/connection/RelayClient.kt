@@ -3,23 +3,33 @@ package com.kvieta.companion.connection
 import org.json.JSONObject
 import java.io.IOException
 import java.net.URL
+import java.security.KeyFactory
+import java.security.MessageDigest
+import java.security.spec.MGF1ParameterSpec
+import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.OAEPParameterSpec
+import javax.crypto.spec.PSource
 import javax.crypto.spec.SecretKeySpec
 import javax.net.ssl.HttpsURLConnection
 
-data class RelaySettings(val origin: String, val room: String, val readToken: String, val key: String, val decisionToken: String = "") {
+data class RelaySettings(val origin: String, val room: String, val readToken: String, val key: String,
+                         val decisionToken: String = "", val guardianKey: String? = null) {
     init {
         require(origin == ORIGIN)
         require(room.matches(Regex("[a-f0-9]{64}")) && readToken.matches(Regex("[a-f0-9]{64}")))
         require(decisionToken.isEmpty() || decisionToken.matches(Regex("[a-f0-9]{64}")))
         require(Base64.getDecoder().decode(key).size == 32)
+        require(guardianKey == null || guardianKey.length in 1..512)
     }
-    fun json(): JSONObject = JSONObject().put("origin", origin).put("room", room).put("readToken", readToken).put("key", key).put("decisionToken", decisionToken)
+    fun json(): JSONObject = JSONObject().put("origin", origin).put("room", room).put("readToken", readToken)
+        .put("key", key).put("decisionToken", decisionToken).put("guardianKey", guardianKey ?: JSONObject.NULL)
     companion object {
         const val ORIGIN = "https://kvieta-companion-relay.ygz-gur39.workers.dev"
-        fun parse(data: JSONObject) = RelaySettings(data.getString("origin"), data.getString("room"), data.getString("readToken"), data.getString("key"), data.optionalText("decisionToken") ?: "")
+        fun parse(data: JSONObject) = RelaySettings(data.getString("origin"), data.getString("room"), data.getString("readToken"),
+            data.getString("key"), data.optionalText("decisionToken") ?: "", data.optionalText("guardianKey"))
     }
 }
 
@@ -58,7 +68,7 @@ object RelayClient {
         return PendingDecision(decisionId, requestId, approve, grantedMinutes, sequence, box, settings.room)
     }
 
-    fun preparePlanDecision(settings: RelaySettings, schedule: List<PlanDay>): PendingDecision {
+    fun preparePlanDecision(settings: RelaySettings, schedule: List<PlanDay>, guardianPin: String? = null): PendingDecision {
         require(schedule.size == 7)
         val decisionId = java.util.UUID.randomUUID().toString()
         val sequence = System.currentTimeMillis()
@@ -69,6 +79,7 @@ object RelayClient {
         val payload = JSONObject().put("sequence", sequence).put("decisionId", decisionId).put("requestId", decisionId)
             .put("action", "update-plan").put("grantedMinutes", JSONObject.NULL).put("decidedAtUtc", java.time.Instant.now().toString())
             .put("payloadJson", payloadJson)
+        attachGuardianProof(settings, payload, guardianPin)
         val box = encryptDecision(settings, payload.toString().toByteArray(Charsets.UTF_8))
         return PendingDecision(decisionId, decisionId, false, null, sequence, box, settings.room, action = "update-plan", payloadJson = payloadJson)
     }
@@ -86,7 +97,8 @@ object RelayClient {
         return PendingDecision(decisionId, decisionId, false, null, sequence, box, settings.room, action = "session-action", payloadJson = payloadJson)
     }
 
-    fun prepareAppRuleDecision(settings: RelaySettings, appName: String, mode: String, dailyLimitMinutes: Int): PendingDecision {
+    fun prepareAppRuleDecision(settings: RelaySettings, appName: String, mode: String, dailyLimitMinutes: Int,
+                               guardianPin: String? = null): PendingDecision {
         require(settings.decisionToken.matches(Regex("[a-f0-9]{64}")))
         require(appName.isNotBlank())
         require(mode in listOf("Blocked", "Limited", "Unlimited"))
@@ -100,6 +112,7 @@ object RelayClient {
         val payload = JSONObject().put("sequence", sequence).put("decisionId", decisionId).put("requestId", decisionId)
             .put("action", "update-app-rule").put("grantedMinutes", JSONObject.NULL).put("decidedAtUtc", java.time.Instant.now().toString())
             .put("payloadJson", payloadJson)
+        attachGuardianProof(settings, payload, guardianPin)
         val box = encryptDecision(settings, payload.toString().toByteArray(Charsets.UTF_8))
         return PendingDecision(decisionId, decisionId, false, null, sequence, box, settings.room, action = "update-app-rule", payloadJson = payloadJson)
     }
@@ -122,7 +135,8 @@ object RelayClient {
         safeSearchEnforced: Boolean? = null,
         blockedWebDomains: List<String>? = null,
         action: String? = null,
-        domain: String? = null
+        domain: String? = null,
+        guardianPin: String? = null
     ): PendingDecision {
         require(settings.decisionToken.matches(Regex("[a-f0-9]{64}")))
         val decisionId = java.util.UUID.randomUUID().toString()
@@ -141,8 +155,33 @@ object RelayClient {
         val payload = JSONObject().put("sequence", sequence).put("decisionId", decisionId).put("requestId", decisionId)
             .put("action", "update-web-guard").put("grantedMinutes", JSONObject.NULL).put("decidedAtUtc", java.time.Instant.now().toString())
             .put("payloadJson", payloadJson)
+        attachGuardianProof(settings, payload, guardianPin)
         val box = encryptDecision(settings, payload.toString().toByteArray(Charsets.UTF_8))
         return PendingDecision(decisionId, decisionId, false, null, sequence, box, settings.room, action = "update-web-guard", payloadJson = payloadJson)
+    }
+
+    private fun attachGuardianProof(settings: RelaySettings, payload: JSONObject, pin: String?) {
+        if (pin == null) return
+        require(pin.matches(Regex("[0-9]{4,8}")))
+        val key = KeyFactory.getInstance("RSA").generatePublic(
+            X509EncodedKeySpec(Base64.getDecoder().decode(requireNotNull(settings.guardianKey)))
+        )
+        val content = listOf(
+            "kvieta-parent-policy-v2", settings.room, payload.getLong("sequence").toString(),
+            payload.getString("decisionId"), payload.getString("requestId"), payload.getString("action"),
+            if (payload.isNull("grantedMinutes")) "" else payload.getInt("grantedMinutes").toString(),
+            java.time.Instant.parse(payload.getString("decidedAtUtc")).toEpochMilli().toString(),
+            Base64.getEncoder().encodeToString(payload.getString("payloadJson").toByteArray(Charsets.UTF_8))
+        ).joinToString("\n")
+        val digest = MessageDigest.getInstance("SHA-256").digest(content.toByteArray(Charsets.UTF_8))
+        val plaintext = digest + pin.toByteArray(Charsets.US_ASCII)
+        try {
+            val cipher = Cipher.getInstance("RSA/ECB/OAEPPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, key, OAEPParameterSpec(
+                "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT
+            ))
+            payload.put("parentProof", Base64.getEncoder().encodeToString(cipher.doFinal(plaintext)))
+        } finally { plaintext.fill(0) }
     }
 
     fun sendPreparedDecision(settings: RelaySettings, decision: PendingDecision) {

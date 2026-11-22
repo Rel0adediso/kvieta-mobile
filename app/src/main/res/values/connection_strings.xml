@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="family_policy_pair_again">Scan a new Kvieta QR code to edit Family rules.</string>
+    <string name="family_policy_rejected">Guardian could not apply the change. Check the PIN and try again.</string>
     <string name="link_back">Back</string>
     <string name="link_computer">Your computer</string>
     <string name="link_title">Connect computer</string>

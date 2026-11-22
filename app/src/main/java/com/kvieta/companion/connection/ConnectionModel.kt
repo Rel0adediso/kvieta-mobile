@@ -33,6 +33,8 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
     private var polling: Job? = null
     private var requestJob: Job? = null
     private var outgoing: PendingDecision? = null
+    private var pendingFamilyPolicy: PendingDecision? = null
+    var familyPolicyRejected by mutableStateOf(false); private set
     var input by mutableStateOf(""); private set
     var status by mutableStateOf(LinkStatus.IDLE); private set
     var snapshot by mutableStateOf<DesktopSnapshot?>(null); private set
@@ -257,6 +259,13 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
     }
 
     private suspend fun accept(received: DesktopSnapshot) {
+        val policy = pendingFamilyPolicy
+        val receipt = received.policyReceipt
+        if (policy != null && receipt != null && receipt.decisionId == policy.id && receipt.state in listOf("Applied", "Failed", "Expired")) {
+            familyPolicyRejected = receipt.state != "Applied"
+            if (policy.action == "update-plan") planSaved = !familyPolicyRejected
+            pendingFamilyPolicy = null
+        }
         val request = received.timeRequest
         val pending = outgoing
         if (pending == null && snapshot?.timeRequest?.id != request?.id) decisionStatus = DecisionStatus.IDLE
@@ -342,7 +351,9 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
         }
     }
 
-    fun submitPlan(schedule: List<PlanDay>) {
+    fun hasGuardianPairing(): Boolean = identity.remote()?.guardianKey != null
+
+    fun submitPlan(schedule: List<PlanDay>, guardianPin: String? = null) {
         if (planSaving || !remoteAvailable || schedule.size != 7) return
         planSaving = true; planSaved = false
         viewModelScope.launch {
@@ -350,13 +361,14 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
                 try {
                     val remote = withContext(Dispatchers.IO) { identity.remote() ?: error("Remote access unavailable") }
                     val prepared = withContext(Dispatchers.IO) {
-                        val decision = RelayClient.preparePlanDecision(remote, schedule)
+                        val decision = RelayClient.preparePlanDecision(remote, schedule, guardianPin)
                         identity.saveDecision(decision)
                         RelayClient.sendPreparedDecision(remote, decision)
                         decision.copy(sent = true).also { identity.saveDecision(it) }
                     }
                     outgoing = prepared
-                    planSaved = true
+                    if (guardianPin != null) trackFamilyPolicy(prepared)
+                    else planSaved = true
                 } catch (ex: CancellationException) { throw ex }
                 catch (_: Exception) { planSaved = false }
                 finally { planSaving = false }
@@ -399,7 +411,7 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
         }
     }
 
-    fun submitAppRule(appName: String, mode: String, dailyLimitMinutes: Int) {
+    fun submitAppRule(appName: String, mode: String, dailyLimitMinutes: Int, guardianPin: String? = null) {
         if (ruleSaving || !remoteAvailable || appName.isBlank()) return
         ruleSaving = true
         viewModelScope.launch {
@@ -407,12 +419,13 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
                 try {
                     val remote = withContext(Dispatchers.IO) { identity.remote() ?: error("Remote access unavailable") }
                     val prepared = withContext(Dispatchers.IO) {
-                        val decision = RelayClient.prepareAppRuleDecision(remote, appName, mode, dailyLimitMinutes)
+                        val decision = RelayClient.prepareAppRuleDecision(remote, appName, mode, dailyLimitMinutes, guardianPin)
                         identity.saveDecision(decision)
                         RelayClient.sendPreparedDecision(remote, decision)
                         decision.copy(sent = true).also { identity.saveDecision(it) }
                     }
                     outgoing = prepared
+                    if (guardianPin != null) trackFamilyPolicy(prepared)
                     withContext(Dispatchers.IO) { delay(1500) }
                     val received = withContext(Dispatchers.IO) { fetchSnapshot(active, remote) }
                     if (received != null) accept(received)
@@ -428,7 +441,8 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
         safeSearchEnforced: Boolean? = null,
         blockedWebDomains: List<String>? = null,
         action: String? = null,
-        domain: String? = null
+        domain: String? = null,
+        guardianPin: String? = null
     ) {
         if (webGuardSaving || !remoteAvailable) return
         webGuardSaving = true
@@ -439,14 +453,15 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
                     val remote = withContext(Dispatchers.IO) { identity.remote() ?: error("Remote access unavailable") }
                     val prepared = withContext(Dispatchers.IO) {
                         val decision = RelayClient.prepareWebGuardDecision(
-                            remote, webGuardEnabled, safeSearchEnforced, blockedWebDomains, action, domain
+                            remote, webGuardEnabled, safeSearchEnforced, blockedWebDomains, action, domain, guardianPin
                         )
                         identity.saveDecision(decision)
                         RelayClient.sendPreparedDecision(remote, decision)
                         decision.copy(sent = true).also { identity.saveDecision(it) }
                     }
                     outgoing = prepared
-                    webGuardMessage = "Güncellendi"
+                    if (guardianPin != null) trackFamilyPolicy(prepared)
+                    webGuardMessage = "İşlem iletildi"
                     withContext(Dispatchers.IO) { delay(1200) }
                     val received = withContext(Dispatchers.IO) { runCatching { fetchSnapshot(active, remote) }.getOrNull() }
                     if (received != null) accept(received)
@@ -455,6 +470,11 @@ class ConnectionModel @JvmOverloads constructor(application: Application,
                 finally { webGuardSaving = false }
             }
         }
+    }
+
+    private fun trackFamilyPolicy(decision: PendingDecision) {
+        pendingFamilyPolicy = decision
+        familyPolicyRejected = false
     }
 
     private fun fetchSnapshot(connection: DesktopConnection?, relay: RelaySettings? = null): DesktopSnapshot? {
